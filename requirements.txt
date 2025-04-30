@@ -1,0 +1,34 @@
+# Web framework
+fastapi
+uvicorn
+httpx
+
+# ORM and PostgreSQL
+sqlalchemy
+psycopg2-binary
+
+# Pydantic for datavalidation
+pydantic
+pydantic-settings
+
+# Fuzzy matching
+rapidfuzz
+unicode
+
+# Vector store and embeddings
+faiss-cpu
+numpy
+sentence-transformers
+
+# Graph database
+neo4j
+
+# LLM support: Mistral 7B via Hugging Face
+transformers
+torch
+
+# Async DB
+asyncpg
+
+# Testing
+pytest
