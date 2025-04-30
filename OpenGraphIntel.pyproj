@@ -4,13 +4,15 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d56804f7-f055-4809-b835-a3cf23f13707</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>OpenGraphIntel.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>OpenGraphIntel</Name>
     <RootNamespace>OpenGraphIntel</RootNamespace>
+    <InterpreterId>MSBuild|venv|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +23,55 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OpenGraphIntel.py" />
+    <Compile Include="open_graph_intel\data_layer\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\gateway\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\graph\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\ingestion\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\llm_query\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\matcher\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\nlp_enrichment\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="open_graph_intel\shared\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="venv\">
+      <Id>venv</Id>
+      <Version>3.13</Version>
+      <Description>venv (Python 3.13)</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="open_graph_intel\" />
+    <Folder Include="open_graph_intel\data_layer\" />
+    <Folder Include="open_graph_intel\gateway\" />
+    <Folder Include="open_graph_intel\graph\" />
+    <Folder Include="open_graph_intel\ingestion\" />
+    <Folder Include="open_graph_intel\llm_query\" />
+    <Folder Include="open_graph_intel\matcher\" />
+    <Folder Include="open_graph_intel\nlp_enrichment\" />
+    <Folder Include="open_graph_intel\shared\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="open_graph_intel\.env" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
