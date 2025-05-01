@@ -23,5 +23,29 @@ services:
     depends_on:
       - db
 
+  neo4j:
+    image: neo4j:latest
+    container_name: sanctions_neo4j
+    restart: always
+    ports:
+      - "7474:7474" # Neo4j Browser
+      - "7687:7687" # Bolt Protocol
+    environment:
+      NEO4J_AUTH: neo4j/password # Default username/password
+    volumes:
+      - neo4jdata:/data
+
+  faiss:
+    image: daangn/faiss-server:latest
+    container_name: sanctions_faiss
+    restart: always
+    ports:
+      - "50051:50051"
+    volumes:
+      - faissdata:/data
+
+
 volumes:
   pgdata:
+  neo4jdata:
+  faissdata:
