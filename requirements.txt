@@ -16,7 +16,7 @@ rapidfuzz
 unicode
 
 # Vector store and embeddings
-faiss-cpu
+pymilvus
 numpy
 sentence-transformers
 
@@ -32,3 +32,6 @@ asyncpg
 
 # Testing
 pytest
+
+# Utilities
+python-dotenv
