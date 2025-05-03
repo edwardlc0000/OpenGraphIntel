@@ -4,6 +4,7 @@
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from typing import Final
 
 # Import custom modules
 from open_graph_intel.common.utils import get_env_variable
@@ -19,17 +20,17 @@ load_dotenv()
 
 # Retrieve the environment variables with detailed error information
 try:
-    DB_NAME: str = get_env_variable("POSTGRES_DB")
-    USER: str = get_env_variable("POSTGRES_USER")
-    PASSWORD: str = get_env_variable("POSTGRES_PASSWORD")
-    HOST: str = get_env_variable("POSTGRES_HOST")
-    PORT: str = get_env_variable("POSTGRES_PORT")
+    DB_NAME: Final[str] = get_env_variable("POSTGRES_DB")
+    USER: Final[str] = get_env_variable("POSTGRES_USER")
+    PASSWORD: Final[str] = get_env_variable("POSTGRES_PASSWORD")
+    HOST: Final[str] = get_env_variable("POSTGRES_HOST")
+    PORT: Final[str] = get_env_variable("POSTGRES_PORT")
 except ValueError as e:
     logger.error(f"Error retrieving environment variables: {e}")
     raise
 
 # Construct the PostgreSQL URL
-DATABASE_URL = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}"
+DATABASE_URL: Final[str] = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}"
 
 # Create the database engine
 try:
