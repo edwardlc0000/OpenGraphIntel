@@ -19,17 +19,17 @@ load_dotenv()
 
 # Retrieve the environment variables with detailed error information
 try:
-    db_name = get_env_variable("POSTGRES_DB")
-    user = get_env_variable("POSTGRES_USER")
-    password = get_env_variable("POSTGRES_PASSWORD")
-    host = get_env_variable("POSTGRES_HOST")
-    port = get_env_variable("POSTGRES_PORT")
+    DB_NAME: str = get_env_variable("POSTGRES_DB")
+    USER: str = get_env_variable("POSTGRES_USER")
+    PASSWORD: str = get_env_variable("POSTGRES_PASSWORD")
+    HOST: str = get_env_variable("POSTGRES_HOST")
+    PORT: str = get_env_variable("POSTGRES_PORT")
 except ValueError as e:
     logger.error(f"Error retrieving environment variables: {e}")
     raise
 
 # Construct the PostgreSQL URL
-DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+DATABASE_URL = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}"
 
 # Create the database engine
 try:
