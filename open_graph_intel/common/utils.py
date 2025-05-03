@@ -2,6 +2,7 @@
 
 import os
 import logging
+from typing import Final
 from dotenv import load_dotenv
 
 # Configure logging
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 # Load environment variables from .env file
 load_dotenv()
 
-def get_env_variable(var_name: str) -> str:
+def get_env_variable(var_name: str) -> Final[str]:
     """
     Retrieve an environment variable value.
     
