@@ -1,0 +1,50 @@
+#open_graph_intel/data_layer/db.py
+
+# Import dependencies
+import logging
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+# Import custom modules
+from open_graph_intel.common.utils import get_env_variable
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# Import environment variables
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Retrieve the environment variables with detailed error information
+try:
+    db_name = get_env_variable("POSTGRES_DB")
+    user = get_env_variable("POSTGRES_USER")
+    password = get_env_variable("POSTGRES_PASSWORD")
+    host = get_env_variable("POSTGRES_HOST")
+    port = get_env_variable("POSTGRES_PORT")
+except ValueError as e:
+    logger.error(f"Error retrieving environment variables: {e}")
+    raise
+
+# Construct the PostgreSQL URL
+DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+
+# Create the database engine
+try:
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
+    logger.info("Database engine created successfully.")
+except Exception as e:
+    logger.error(f"Error creating database engine: {e}")
+    raise
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
