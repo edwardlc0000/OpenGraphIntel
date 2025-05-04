@@ -1,7 +1,7 @@
 services:
-  db:
+  postgres:
     image: postgres:latest
-    container_name: sanctions_postgres
+    container_name: postgres
     restart: always
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
@@ -21,11 +21,11 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     depends_on:
-      - db
+      - postgres
 
   neo4j:
     image: neo4j:latest
-    container_name: sanctions_neo4j
+    container_name: neo4j
     restart: always
     ports:
       - "${NEO4J_HTTP_PORT}:${NEO4J_HTTP_PORT}" # Neo4j Browser
