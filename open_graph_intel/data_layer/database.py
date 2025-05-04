@@ -1,4 +1,4 @@
-#open_graph_intel/data_layer/db.py
+#open_graph_intel/data_layer/database.py
 
 # Import dependencies
 import logging

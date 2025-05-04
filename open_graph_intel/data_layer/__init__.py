@@ -4,7 +4,7 @@
 This module provides the database connection and session management for open_graph_intel.
 """
 
-from .db import (
+from .database import (
     get_db,
     engine,
     SessionLocal,
