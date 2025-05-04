@@ -4,8 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d56804f7-f055-4809-b835-a3cf23f13707</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>tests\test_utils.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,6 +22,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="open_graph_intel\common\utils.py" />
+    <Compile Include="open_graph_intel\data_layer\database.py" />
+    <Compile Include="open_graph_intel\data_layer\graphdb.py" />
+    <Compile Include="open_graph_intel\data_layer\vectorstore.py" />
     <Compile Include="open_graph_intel\data_layer\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -44,9 +47,13 @@
     <Compile Include="open_graph_intel\nlp_enrichment\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="open_graph_intel\shared\__init__.py">
+    <Compile Include="open_graph_intel\common\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\sentence_transformer_benchmark.py" />
+    <Compile Include="open_graph_intel\__init__.py" />
+    <Compile Include="tests\test_utils.py" />
+    <Compile Include="tests\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="venv\">
@@ -60,6 +67,7 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="tests\" />
     <Folder Include="open_graph_intel\" />
     <Folder Include="open_graph_intel\data_layer\" />
     <Folder Include="open_graph_intel\gateway\" />
@@ -68,10 +76,12 @@
     <Folder Include="open_graph_intel\llm_query\" />
     <Folder Include="open_graph_intel\matcher\" />
     <Folder Include="open_graph_intel\nlp_enrichment\" />
-    <Folder Include="open_graph_intel\shared\" />
+    <Folder Include="open_graph_intel\common\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="open_graph_intel\.env" />
+    <Content Include=".env" />
+    <Content Include="docker-compose.yml" />
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
