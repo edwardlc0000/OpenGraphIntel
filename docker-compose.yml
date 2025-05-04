@@ -1,5 +1,5 @@
 services:
-  postgres:
+  db:
     image: postgres:latest
     container_name: sanctions_postgres
     restart: always
