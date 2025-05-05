@@ -1,4 +1,4 @@
-# open_graph_intel/data_layer/db.py
+# open_graph_intel/data_layer/__init__.py
 
 """
 This module provides the database connection and session management for open_graph_intel.
