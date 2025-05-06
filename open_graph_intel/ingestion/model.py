@@ -20,7 +20,7 @@ class SDNEntity(Base):
     uid = Column(Integer, unique=True, nullable=False)
     first_name = Column(String)
     last_name = Column(String)
-    SDN_type = Column(String)
+    sdn_type = Column(String)
     remarks = Column(Text)
 
     # Relationships
@@ -81,8 +81,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     doc_type = Column(String)
     doc_number = Column(String)
-    issue_date = Column(String)
-    expiry_date = Column(String)
+    issuing_country = Column(String)
     sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
     sdn_entity = relationship("SDNEntity", back_populates="documents")
@@ -125,3 +124,18 @@ class Vessel(Base):
     owner = Column(String)
     # Relationships
     sdn_entity = relationship("SDNEntity", back_populates="vessel")
+
+
+class Aircraft(Base):
+    """
+    SQLAlchemy model for storing aircraft.
+    """
+    __tablename__ = "aircraft"
+    id = Column(Integer, primary_key=True, index=True)
+    tail_number = Column(String)
+    aircraft_type = Column(String)
+    manufacturer = Column(String)
+    model = Column(String)
+    registration_location = Column(String)
+    # Relationships
+    sdn_entity = relationship("SDNEntity", back_populates="aircraft")
