@@ -1,14 +1,11 @@
 # open_graph_intel/ingestion/model.py
 
 # Import dependencies
-import logging
 from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 # Import custom modules
 from open_graph_intel.data_layer.database import Base
-from open_graph_intel.data_layer.graphdb import Driver
-from open_graph_intel.data_layer.vectorstore import create_collection, insert_vectors
 
 # Configure logging
 logger = logging.getLogger(__name__)
