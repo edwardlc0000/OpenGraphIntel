@@ -29,21 +29,39 @@
     <Compile Include="open_graph_intel\data_layer\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="open_graph_intel\gateway\main.py" />
+    <Compile Include="open_graph_intel\gateway\model.py" />
+    <Compile Include="open_graph_intel\gateway\service.py" />
     <Compile Include="open_graph_intel\gateway\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="open_graph_intel\graph\main.py" />
+    <Compile Include="open_graph_intel\graph\model.py" />
+    <Compile Include="open_graph_intel\graph\service.py" />
     <Compile Include="open_graph_intel\graph\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="open_graph_intel\ingestion\main.py" />
+    <Compile Include="open_graph_intel\ingestion\model.py" />
+    <Compile Include="open_graph_intel\ingestion\service.py" />
     <Compile Include="open_graph_intel\ingestion\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="open_graph_intel\llm_query\main.py" />
+    <Compile Include="open_graph_intel\llm_query\model.py" />
+    <Compile Include="open_graph_intel\llm_query\service.py" />
     <Compile Include="open_graph_intel\llm_query\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="open_graph_intel\matcher\main.py" />
+    <Compile Include="open_graph_intel\matcher\model.py" />
+    <Compile Include="open_graph_intel\matcher\service.py" />
     <Compile Include="open_graph_intel\matcher\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="open_graph_intel\nlp_enrichment\main.py" />
+    <Compile Include="open_graph_intel\nlp_enrichment\model.py" />
+    <Compile Include="open_graph_intel\nlp_enrichment\service.py" />
     <Compile Include="open_graph_intel\nlp_enrichment\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -67,6 +85,7 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="frontend\" />
     <Folder Include="tests\" />
     <Folder Include="open_graph_intel\" />
     <Folder Include="open_graph_intel\data_layer\" />
@@ -81,6 +100,10 @@
   <ItemGroup>
     <Content Include=".env" />
     <Content Include="docker-compose.yml" />
+    <Content Include="open_graph_intel\ingestion\Dockerfile" />
+    <Content Include="open_graph_intel\llm_query\Dockerfile" />
+    <Content Include="open_graph_intel\matcher\Dockerfile" />
+    <Content Include="open_graph_intel\nlp_enrichment\Dockerfile" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
