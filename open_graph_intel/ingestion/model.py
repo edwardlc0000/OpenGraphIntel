@@ -1,7 +1,8 @@
 # open_graph_intel/ingestion/model.py
 
 # Import dependencies
-from sqlalchemy import Column, Integer, String, Text
+import logging
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
 
 # Import custom modules
