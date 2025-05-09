@@ -36,3 +36,5 @@ pytest
 # Utilities
 python-dotenv
 tqdm
+lxml
+requests
