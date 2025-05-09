@@ -4,6 +4,20 @@
 import logging
 import requests
 from lxml import etree
+from sqlalchemy.orm import Session
+
+# Import custom modules
+from ingestion.model import (
+    SDNEntity,
+    Alias,
+    Address,
+    Document,
+    Program,
+    Nationality,
+    Vessel,
+    Aircraft
+)
+
 
 def download_sdn_files(xml_url: str, xsd_url: str) -> tuple[str, str]:
     """
@@ -134,3 +148,56 @@ def parse_advanced_sdn_xml(xml_path: str) -> list[dict]:
 
 
     return sdn_data
+
+
+def store_sdn_data(sdn_data: list[dict], db: Session):
+    """
+    Store the parsed SDN data into the database.
+    Args:
+        sdn_data (list[dict]): The parsed SDN data.
+        db (Session): The database session.
+    """
+    for entry in sdn_data:
+        if db.query(SDNEntity).filter(SDNEntity.uid == entry["uid"]).first():
+            logging.warning(
+                f"SDNEntity with UID {entry['uid']} already exists. Skipping.")
+            continue
+
+        # Create SDNEntity
+        sdn_entity = SDNEntity(uid=entry["uid"],
+                               first_name=entry["first_name"],
+                               last_name=entry["last_name"],
+                               sdn_type=entry["sdn_type"],
+                               remarks=entry["remarks"])
+        # Add aliases
+        entry.aliases = [
+            Alias(name=alias) for alias in entry["aliases"]
+        ]
+        # Add programs
+        entry.programs = [
+            Program(name=program) for program in entry["programs"]
+        ]
+        # Add nationalities
+        entry.nationalities = [
+            Nationality(iso_code=iso_code) for iso_code in entry["nationalities"]
+        ]
+        # Add documents
+        entry.documents = [
+            Document(**document) for document in entry["documents"]
+        ]
+        # Add addresses
+        entry.addresses = [
+            Address(**address) for address in entry["address"]
+        ]
+
+        # Add vessel info
+        if entry["vessel_info"]:
+            sdn_entity.vessel = Vessel(**entry["vessel_info"])
+
+        # Add aircraft info
+        if entry["aircraft_info"]:
+            sdn_entity.aircraft = Aircraft(**entry["aircraft_info"])
+
+        db.add(sdn_entity)
+
+    db.commit()
