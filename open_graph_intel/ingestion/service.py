@@ -1,7 +1,56 @@
 # open_graph_intel/ingestion/service.py
 
 # Import dependencies
+import logging
+import requests
 from lxml import etree
+
+def download_sdn_files(xml_url: str, xsd_url: str) -> tuple[str, str]:
+    """
+    Download the SDN XML and XSD files from the provided URLs.
+    Args:
+        xml_url (str): The URL of the SDN XML file.
+        xsd_url (str): The URL of the XSD file.
+    Returns:
+        tuple[str, str]: Paths to the downloaded XML and XSD files.
+    """
+    xml_path = "sdn_advanced.xml"
+    xsd_path = "sdn_advanced.xsd"
+    # Download XML file
+    response = requests.get(xml_url)
+    with open(xml_path, "wb") as xml_file:
+        xml_file.write(response.content)
+    # Download XSD file
+    response = requests.get(xsd_url)
+    with open(xsd_path, "wb") as xsd_file:
+        xsd_file.write(response.content)
+    return xml_path, xsd_path
+
+def validate_sdn_xml(xml_path: str, xsd_path: str) -> bool:
+    """
+    Validate the SDN XML file against the provided XSD schema.
+    Args:
+        xml_path (str): The path to the XML file.
+        xsd_path (str): The path to the XSD file.
+    Returns:
+        bool: True if the XML is valid, False otherwise.
+    """
+    # Parse the XSD file
+    with open(xsd_path, "rb") as xsd_file:
+        schema_root = etree.XML(xsd_file.read())
+        schema = etree.XMLSchema(schema_root)
+
+    # Parse the XML file
+    with open(xml_path, "rb") as xml_file:
+        xml_doc = etree.parse(xml_file)
+
+    # Validate the XML file against the XSD schema
+    try:
+        schema.assertValid(xml_doc)
+        return True
+    except etree.DocumentInvalid as e:
+        logging.error(f"XML validation error: {e}")
+        return False
 
 def parse_advanced_sdn_xml(xml_path: str) -> list[dict]:
     """
