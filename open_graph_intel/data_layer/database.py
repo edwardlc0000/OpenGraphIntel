@@ -57,14 +57,15 @@ def construct_engine(database_url: str = None, retries: int = 5) -> Engine:
         for i in range(retries):
             try:
                 _engine = create_engine(database_url)
-                logger.info(f"Database engine created successfully: {database_url('@')[-1]}")
+                logger.info(f"Database engine created successfully: {database_url.split('@')[0]}")
                 return _engine
             except Exception as e:
                 logger.error(f"Error creating database engine: {e}")
                 if i < retries - 1:
                     logger.info(f"Retrying to create database engine... ({i + 1}/{retries})")
-        logger.error(f"Failed to create database engine after {retries} retries.")
-        raise
+                else:
+                    logger.error(f"Failed to create database engine after {retries} retries.")
+                    raise RuntimeError("Failed to create database engine.") from e
     return _engine
 
 def construct_session(engine: Engine = None) -> sessionmaker:
