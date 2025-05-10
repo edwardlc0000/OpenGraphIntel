@@ -19,7 +19,9 @@ from .graphdb import (
 )
 
 from .vectorstore import (
+    get_milvus_config,
+    connect_to_milvus,
     create_collection,
     insert_vectors,
-    search_vectors
+    search_vectors,
 )
