@@ -17,16 +17,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Retrieve the environment variables with detailed error information
-try:
-    MILVUS_HOST: Final[str] = get_env_variable("MILVUS_HOST")
-    MILVUS_GRPC_PORT: Final[str] = get_env_variable("MILVUS_GRPC_PORT")
-except ValueError as e:
-    logger.error(f"Error retrieving environment variables: {e}")
-    raise
+# Cache for the Milvus host and port
+_milvus_host = None
+_milvus_grpc_port = None
 
-# Connect to Milvus
-connections.connect(host=MILVUS_HOST, port=MILVUS_GRPC_PORT)
+# Lazy initialization for the Milvus host and port
+def get_milvus_config() -> tuple[str, str]:
+    """
+    Retrieves the Milvus host and port from environment variables.
+    Returns:
+        tuple: A tuple containing the Milvus host and port.
+    """
+    try:
+        MILVUS_HOST = get_env_variable("MILVUS_HOST")
+        MILVUS_GRPC_PORT = get_env_variable("MILVUS_GRPC_PORT")
+        return MILVUS_HOST, MILVUS_GRPC_PORT
+    except ValueError as e:
+        logger.error(f"Error retrieving environment variables: {e}")
+        raise
+
+# Lazy initialization of the Milvus host and port
+def connect_to_milvus():
+    """
+    Connects to the Milvus server using the host and port from environment variables.
+    """
+    global _milvus_host, _milvus_grpc_port
+    if _milvus_host is None or _milvus_grpc_port is None:
+        _milvus_host, _milvus_grpc_port = get_milvus_config()
+    if not connections.has_connection("default"):
+        connections.connect(host=_milvus_host, port=_milvus_grpc_port)
+        logger.info(f"Connected to Milvus at {_milvus_host}:{_milvus_grpc_port}")
+    else:
+        logger.info("Already connected to Milvus.")
 
 # Define a collection schema
 def create_collection(collection_name):
@@ -35,12 +57,14 @@ def create_collection(collection_name):
     Args:
         collection_name (str): The name of the collection to create.
     """
+    connect_to_milvus()  # Ensure connection to Milvus
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=False),
         FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1024)
     ]
     schema = CollectionSchema(fields, description="Vector store for embeddings")
     collection = Collection(name=collection_name, schema=schema)
+    logger.info(f"Collection {collection_name} created with schema: {schema}")
     return collection
 
 # Insert vectors
@@ -52,6 +76,10 @@ def insert_vectors(collection_name, ids, embeddings):
         ids (list): A list of IDs for the vectors.
         embeddings (list): A list of embeddings to insert.
     """
+    connect_to_milvus()  # Ensure connection to Milvus
+    if not Collection.exists(collection_name):
+        create_collection(collection_name)
+
     collection = Collection(collection_name)
     data = [ids, embeddings]
 
@@ -74,6 +102,7 @@ def search_vectors(collection_name, query_vectors, top_k=5):
         query_vectors (list): A list of query vectors to search for.
         top_k (int): The number of top results to return.
     """
+    connect_to_milvus()  # Ensure connection to Milvus
     collection = Collection(collection_name)
     search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
 
