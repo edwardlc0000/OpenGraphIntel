@@ -9,7 +9,5 @@ from .common import (
 )
 
 from .data_layer import (
-    db
+    database
 )
-
-from .ingestion import (main, model, service)
