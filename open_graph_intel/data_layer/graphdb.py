@@ -16,18 +16,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Retrieve the environment variables with detailed error information
-try:
-    NEO4J_URI = get_env_variable("NEO4J_URI")
-    NEO4J_USER = get_env_variable("NEO4J_USER")
-    NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD")
-except ValueError as e:
-    logger.error(f"Error retrieving environment variables: {e}")
-    raise
+# Cache for the Neo4j driver
+_neo4j_driver = None
 
-# Connect to Neo4j
-Driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+# Lazy initialization for the Neo4j configuration
+def get_neo4j_config() -> tuple[str, str, str]:
+    """
+    Retrieves the Neo4j configuration from environment variables.
+    Returns:
+        tuple: A tuple containing the Neo4j URI, user, and password.
+    """
+    try:
+        NEO4J_URI = get_env_variable("NEO4J_URI")
+        NEO4J_USER = get_env_variable("NEO4J_USER")
+        NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD")
+        return NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+    except ValueError as e:
+        logger.error(f"Error retrieving environment variables: {e}")
+        raise
 
+# Lazy initialization for the Neo4j driver
+def get_neo4j_driver() -> Driver:
+    """
+    Retrieves the Neo4j driver, creating it if it doesn't exist.
+    Returns:
+        Driver: The Neo4j driver.
+    """
+    global _neo4j_driver
+    if _neo4j_driver is None:
+        NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD = get_neo4j_config()
+        _neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        logger.info(f"Neo4j driver created successfully: {NEO4J_URI}")
+    return _neo4j_driver
 
 # Create nodes
 def create_node(tx, label, properties):
