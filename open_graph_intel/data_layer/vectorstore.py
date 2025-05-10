@@ -45,8 +45,12 @@ def connect_to_milvus():
     if _milvus_host is None or _milvus_grpc_port is None:
         _milvus_host, _milvus_grpc_port = get_milvus_config()
     if not connections.has_connection("default"):
-        connections.connect(host=_milvus_host, port=_milvus_grpc_port)
-        logger.info(f"Connected to Milvus at {_milvus_host}:{_milvus_grpc_port}")
+        try:
+            connections.connect(host=_milvus_host, port=_milvus_grpc_port)
+            logger.info(f"Connected to Milvus at {_milvus_host}:{_milvus_grpc_port}")
+        except Exception as e:
+            logger.error(f"Failed to connect to Milvus at {_milvus_host}:{_milvus_grpc_port}")
+            raise RuntimeError("Failed to connect to Milvus.")
     else:
         logger.info("Already connected to Milvus.")
 
