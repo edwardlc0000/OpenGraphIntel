@@ -2,8 +2,9 @@
 
 # Import dependencies
 import logging
+from typing import Generator
 from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker, declarative_base
 from typing import Final
 
 # Import custom modules
@@ -67,7 +68,7 @@ def construct_engine(database_url: str = None, retries: int = 5) -> Engine:
         raise RuntimeError("Failed to create database engine.")
     return _engine
 
-def construct_session(engine: Engine = None) -> sessionmaker:
+def construct_session(engine: Engine = None) -> Session:
     """
     Creates a session for the database.
     Args:
@@ -87,7 +88,7 @@ def construct_session(engine: Engine = None) -> sessionmaker:
 
 
 # Lazy initialization for the declarative base
-def construct_base() -> declarative_base:
+def construct_base() -> DeclarativeBase:
     """
     Creates a declarative base for the database models.
     Returns:
@@ -97,7 +98,7 @@ def construct_base() -> declarative_base:
 
 
 # Dependency injection for the database session
-def get_db():
+def get_db() -> Generator[Session, None, None]:
     """
     Dependency that provides a database session.
     """
