@@ -45,8 +45,12 @@ def get_neo4j_driver() -> Driver:
     global _neo4j_driver
     if _neo4j_driver is None:
         NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD = get_neo4j_config()
-        _neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-        logger.info(f"Neo4j driver created successfully: {NEO4J_URI}")
+        try:
+            _neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+            logger.info(f"Neo4j driver created successfully: {NEO4J_URI}")
+        except Exception as e:
+            logger.error(f"Failed to create Neo4j driver: {e}")
+            raise RuntimeError("Failed to create Neo4j driver.")
     return _neo4j_driver
 
 # Create nodes
