@@ -70,7 +70,11 @@
     </Compile>
     <Compile Include="tests\sentence_transformer_benchmark.py" />
     <Compile Include="open_graph_intel\__init__.py" />
+    <Compile Include="tests\test_database.py" />
+    <Compile Include="tests\test_graphdb.py" />
+    <Compile Include="tests\test_ingestion_service.py" />
     <Compile Include="tests\test_utils.py" />
+    <Compile Include="tests\test_vectorstore.py" />
     <Compile Include="tests\__init__.py" />
   </ItemGroup>
   <ItemGroup>

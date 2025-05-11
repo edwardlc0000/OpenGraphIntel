@@ -23,7 +23,7 @@ sentence-transformers
 # Graph database
 neo4j
 
-# LLM support: Mistral 7B via Hugging Face
+# LLM support: Meta Llama 4 Maverick via Hugging Face
 transformers
 torch
 
