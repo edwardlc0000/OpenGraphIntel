@@ -1,0 +1,19 @@
+# Web framework
+fastapi
+uvicorn
+httpx
+
+# ORM and PostgreSQL
+SQLAlchemy
+psycopg2-binary
+
+# Vector store and embeddings
+pymilvus
+
+# Graph database
+neo4j
+
+# Utilities
+python-dotenv
+requests
+lxml

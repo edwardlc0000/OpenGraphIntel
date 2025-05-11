@@ -109,6 +109,7 @@
     <Content Include="docker-compose.yml" />
     <Content Include="LICENSE.txt" />
     <Content Include="open_graph_intel\ingestion\Dockerfile" />
+    <Content Include="open_graph_intel\ingestion\ingestion-requirements.txt" />
     <Content Include="open_graph_intel\llm_query\Dockerfile" />
     <Content Include="open_graph_intel\matcher\Dockerfile" />
     <Content Include="open_graph_intel\nlp_enrichment\Dockerfile" />

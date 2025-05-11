@@ -2,7 +2,7 @@
 
 # Import dependencies
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette.routing import Router
 
@@ -33,17 +33,21 @@ from open_graph_intel.ingestion.model import (
 # Initialize the FastAPI router
 router = APIRouter()
 
+# Initialize FastAPI app
+app = FastAPI()
+app.include_router(router, prefix="/ingestion", tags=["ingestion"])
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
-@router.post("/load/sdn_advanced_data")
-def load_sdn_advanced_data(
+@router.post("/load/sdn_data")
+def load_sdn_data(
     db: Session = Depends(get_db),
-    xml_url: str = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN_ADVANCED.XML",
-    xsd_url: str = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/ADVANCED_XML.xsd"
+    xml_url: str = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML",
+    xsd_url: str = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML.xsd"
 ) -> dict[str, str]:
     """
-    Load SDN advanced data from the provided XML and XSD URLs.
+    Load SDN data from the provided XML and XSD URLs.
 
     Args:
         db (Session): The database session.
@@ -54,7 +58,7 @@ def load_sdn_advanced_data(
         dict: A message indicating the success or failure of the operation.
     """
     try:
-        logger.info("Starting SDN advanced data ingestion process.")
+        logger.info("Starting SDN data ingestion process.")
 
         # Download and validate files
         logger.info(f"Downloading files from {xml_url} and {xsd_url}.")
