@@ -11,3 +11,9 @@ from .common import (
 from .data_layer import (
     database
 )
+
+from .ingestion import (
+    main,
+    model,
+    service
+)
