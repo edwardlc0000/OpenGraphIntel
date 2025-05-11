@@ -13,10 +13,10 @@ from open_graph_intel.ingestion.service import (
     download_sdn_files,
     validate_sdn_xml,
     parse_sdn_xml,
-    save_sdn_data_to_db
+    store_sdn_data
 )
 
-from ingestion.model import (
+from open_graph_intel.ingestion.model import (
     SDNEntity,
     Alias,
     Address,
@@ -67,7 +67,7 @@ def load_sdn_advanced_data(
         sdn_data = parse_sdn_xml(xml_path)
 
         logger.info("Saving parsed data to the database.")
-        save_sdn_data_to_db(db, sdn_data)
+        store_sdn_data(sdn_data, db)
 
         logger.info("SDN advanced data loaded successfully.")
         return {"message": "SDN advanced data loaded successfully"}

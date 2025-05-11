@@ -6,10 +6,13 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
 
 # Import custom modules
-from open_graph_intel.data_layer.database import Base
+from open_graph_intel.data_layer.database import construct_base
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Initialize the base class for SQLAlchemy models
+Base = construct_base()
 
 
 class SDNEntity(Base):

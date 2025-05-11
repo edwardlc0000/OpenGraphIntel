@@ -7,7 +7,7 @@ from lxml import etree
 from sqlalchemy.orm import Session
 
 # Import custom modules
-from ingestion.model import (
+from open_graph_intel.ingestion.model import (
     SDNEntity,
     Alias,
     Address,
@@ -66,7 +66,7 @@ def validate_sdn_xml(xml_path: str, xsd_path: str) -> bool:
         logging.error(f"XML validation error: {e}")
         return False
 
-def parse_advanced_sdn_xml(xml_path: str) -> list[dict]:
+def parse_sdn_xml(xml_path: str) -> list[dict]:
     """
     Parse the advanced SDN XML file and extract relevant information.
     Args:
