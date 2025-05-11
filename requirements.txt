@@ -32,6 +32,7 @@ asyncpg
 
 # Testing
 pytest
+pytest-cov
 
 # Utilities
 python-dotenv

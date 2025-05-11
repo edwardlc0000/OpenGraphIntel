@@ -104,10 +104,12 @@
   <ItemGroup>
     <Content Include=".env" />
     <Content Include="docker-compose.yml" />
+    <Content Include="LICENSE.txt" />
     <Content Include="open_graph_intel\ingestion\Dockerfile" />
     <Content Include="open_graph_intel\llm_query\Dockerfile" />
     <Content Include="open_graph_intel\matcher\Dockerfile" />
     <Content Include="open_graph_intel\nlp_enrichment\Dockerfile" />
+    <Content Include="README.md" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
