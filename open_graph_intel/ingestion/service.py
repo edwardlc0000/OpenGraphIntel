@@ -80,7 +80,7 @@ def parse_sdn_xml(xml_path: str) -> list[dict]:
     # Extract relevant information
     sdn_data = []
     for sdn in root.findall(".//DistinctParty"):
-        uid = sdn.findtext("uid"),
+        uid = sdn.findtext("uid")
         first_name = sdn.findtext("first_name")
         last_name = sdn.findtext("last_name")
         sdn_type = sdn.findtext("sdn_type")
@@ -95,7 +95,7 @@ def parse_sdn_xml(xml_path: str) -> list[dict]:
         address = []
         for addr in sdn.findall("addressList/address"):
             address.append({
-                "street": addr.findtext("street"),
+                "address": addr.findtext("address"),
                 "city": addr.findtext("city"),
                 "state": addr.findtext("state"),
                 "postal_code": addr.findtext("postalCode"),
@@ -170,23 +170,23 @@ def store_sdn_data(sdn_data: list[dict], db: Session):
                                sdn_type=entry["sdn_type"],
                                remarks=entry["remarks"])
         # Add aliases
-        entry.aliases = [
+        sdn_entity.aliases = [
             Alias(name=alias) for alias in entry["aliases"]
         ]
         # Add programs
-        entry.programs = [
+        sdn_entity.programs = [
             Program(name=program) for program in entry["programs"]
         ]
         # Add nationalities
-        entry.nationalities = [
+        sdn_entity.nationalities = [
             Nationality(iso_code=iso_code) for iso_code in entry["nationalities"]
         ]
         # Add documents
-        entry.documents = [
+        sdn_entity.documents = [
             Document(**document) for document in entry["documents"]
         ]
         # Add addresses
-        entry.addresses = [
+        sdn_entity.addresses = [
             Address(**address) for address in entry["address"]
         ]
 
@@ -198,6 +198,7 @@ def store_sdn_data(sdn_data: list[dict], db: Session):
         if entry["aircraft_info"]:
             sdn_entity.aircraft = Aircraft(**entry["aircraft_info"])
 
+        # Add the entity to the session
         db.add(sdn_entity)
 
     db.commit()
