@@ -19,9 +19,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Cache for the engine and session
+# Cache for the engine, session, and base
 _session_factory = None
 _engine = None
+_base = None
 
 # Lazy initialization for the database URL
 def construct_postgres_url() -> str:
@@ -94,6 +95,10 @@ def construct_base() -> DeclarativeBase:
     Returns:
         Base: The declarative base.
     """
+    global _base
+    if _base is None:
+        logger.info("Creating a new declarative base.")
+        _base = declarative_base()
     return declarative_base()
 
 
