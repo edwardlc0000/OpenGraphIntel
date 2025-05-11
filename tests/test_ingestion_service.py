@@ -1,6 +1,7 @@
 # tests/test_ingestion_service.py
 
 import os
+import io
 import pytest
 import requests
 from unittest.mock import patch, mock_open, MagicMock
@@ -37,7 +38,7 @@ SAMPLE_XML = """<?xml version="1.0"?>
         </nationalityList>
         <addressList>
             <address>
-                <street>123 Main St</street>
+                <address>123 Main St</address>
                 <city>New York</city>
                 <state>NY</state>
                 <postalCode>10001</postalCode>
@@ -107,7 +108,7 @@ SAMPLE_XSD = """<?xml version="1.0"?>
                                         <xs:element name="address" minOccurs="0" maxOccurs="unbounded">
                                             <xs:complexType>
                                                 <xs:sequence>
-                                                    <xs:element name="street" type="xs:string"/>
+                                                    <xs:element name="address" type="xs:string"/>
                                                     <xs:element name="city" type="xs:string"/>
                                                     <xs:element name="state" type="xs:string"/>
                                                     <xs:element name="postalCode" type="xs:string"/>
@@ -170,16 +171,22 @@ def test_validate_sdn_xml(mock_open_file):
     ]
     assert validate_sdn_xml("sdn_advanced.xml", "sdn_advanced.xsd") is True
 
-def test_parse_advanced_sdn_xml(mock_open_file):
-    mock_open_file.return_value.read.return_value = SAMPLE_XML
-    result = parse_sdn_xml("sdn_advanced.xml")
+def test_parse_sdn_xml():
+    # Pass io.StringIO directly to parse_sdn_xml
+    result = parse_sdn_xml(io.StringIO(SAMPLE_XML))
     assert len(result) == 1
     assert result[0]["uid"] == "123"
     assert result[0]["first_name"] == "John"
 
 def test_store_sdn_data(mock_db_session):
-    sdn_data = parse_sdn_xml("sdn_advanced.xml")
+    # Configure the mock to simulate no existing entity
+    mock_query = mock_db_session.query.return_value
+    mock_query.filter.return_value.first.return_value = None
+
+    # Pass io.StringIO directly to parse_sdn_xml
+    sdn_data = parse_sdn_xml(io.StringIO(SAMPLE_XML))
     store_sdn_data(sdn_data, mock_db_session)
+
+    # Assert that the add and commit methods were called
     assert mock_db_session.add.called
     assert mock_db_session.commit.called
-
