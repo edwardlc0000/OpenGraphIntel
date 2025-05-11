@@ -126,6 +126,7 @@ class Vessel(Base):
     grt = Column(String)
     flag = Column(String)
     owner = Column(String)
+    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
     sdn_entity = relationship("SDNEntity", back_populates="vessel")
 
@@ -141,5 +142,6 @@ class Aircraft(Base):
     manufacturer = Column(String)
     model = Column(String)
     registration_location = Column(String)
+    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
     sdn_entity = relationship("SDNEntity", back_populates="aircraft")
