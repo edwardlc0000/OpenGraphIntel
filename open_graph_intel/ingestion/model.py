@@ -2,7 +2,7 @@
 
 # Import dependencies
 import logging
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 # Import custom modules
@@ -28,13 +28,7 @@ class SDNEntity(Base):
     remarks = Column(Text)
 
     # Relationships
-    aliases = relationship("Alias",
-                           back_populates="sdn_entity",
-                           cascade="all, delete-orphan")
     addresses = relationship("Address",
-                             back_populates="sdn_entity",
-                             cascade="all, delete-orphan")
-    documents = relationship("Document",
                              back_populates="sdn_entity",
                              cascade="all, delete-orphan")
     programs = relationship("Program",
@@ -44,23 +38,110 @@ class SDNEntity(Base):
                                  back_populates="sdn_entity",
                                  cascade="all, delete-orphan")
     vessel = relationship("Vessel",
-                           back_populates="sdn_entity",
-                           cascade="all, delete-orphan")
-    aircraft = relationship("Aircraft",
+                          back_populates="sdn_entity",
+                          cascade="all, delete-orphan",
+                          uselist=False)
+    ids = relationship("ID",
+                       back_populates="sdn_entity",
+                       cascade="all, delete-orphan")
+    aka_list = relationship("AKA",
                             back_populates="sdn_entity",
                             cascade="all, delete-orphan")
+    date_of_birth_list = relationship("DateOfBirth",
+                                      back_populates="sdn_entity",
+                                      cascade="all, delete-orphan")
+    place_of_birth_list = relationship("PlaceOfBirth",
+                                       back_populates="sdn_entity",
+                                       cascade="all, delete-orphan")
+    citizenships = relationship("Citizenship",
+                                 back_populates="sdn_entity",
+                                 cascade="all, delete-orphan")
 
 
-class Alias(Base):
+class PublishInformation(Base):
     """
-    SQLAlchemy model for storing aliases.
+    SQLAlchemy model for storing publish information.
     """
-    __tablename__ = "aliases"
+    __tablename__ = "publish_information"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
+    publish_date = Column(String, nullable=True)
+    record_count = Column(Integer, nullable=True)
+
+
+class ID(Base):
+    """
+    SQLAlchemy model for storing IDs.
+    """
+    __tablename__ = "ids"
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(Integer, nullable=False)
+    id_type = Column(String, nullable=True)
+    id_number = Column(String, nullable=True)
+    id_country = Column(String, nullable=True)
+    issue_date = Column(String, nullable=True)
+    expiration_date = Column(String, nullable=True)
     sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
-    sdn_entity = relationship("SDNEntity", back_populates="aliases")
+    sdn_entity = relationship("SDNEntity", back_populates="ids")
+
+
+class AKA(Base):
+    """
+    SQLAlchemy model for storing aliases (AKA).
+    """
+    __tablename__ = "aka_list"
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(Integer, nullable=False)
+    type = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    last_name = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
+    # Relationships
+    sdn_entity = relationship("SDNEntity", back_populates="aka_list")
+
+
+class DateOfBirth(Base):
+    """
+    SQLAlchemy model for storing dates of birth.
+    """
+    __tablename__ = "date_of_birth_list"
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(Integer, nullable=False)
+    date_of_birth = Column(String, nullable=False)
+    main_entry = Column(Boolean, nullable=False)
+    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
+    # Relationships
+    sdn_entity = relationship("SDNEntity", back_populates="date_of_birth_list")
+
+
+class PlaceOfBirth(Base):
+    """
+    SQLAlchemy model for storing places of birth.
+    """
+    __tablename__ = "place_of_birth_list"
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(Integer, nullable=False)
+    place_of_birth = Column(String, nullable=False)
+    main_entry = Column(Boolean, nullable=False)
+    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
+    # Relationships
+    sdn_entity = relationship("SDNEntity", back_populates="place_of_birth_list")
+
+
+class Citizenship(Base):
+    """
+    SQLAlchemy model for storing citizenships.
+    """
+    __tablename__ = "citizenships"
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(Integer, nullable=False)
+    country = Column(String, nullable=False)
+    main_entry = Column(Boolean, nullable=False)
+    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
+    # Relationships
+    sdn_entity = relationship("SDNEntity", back_populates="citizenships")
+
 
 class Address(Base):
     """
@@ -68,27 +149,19 @@ class Address(Base):
     """
     __tablename__ = "addresses"
     id = Column(Integer, primary_key=True, index=True)
-    address = Column(String, nullable=False)
-    city = Column(String)
-    state = Column(String)
-    country = Column(String)
-    postal_code = Column(String)
+    uid = Column(Integer, nullable=False)
+    address1 = Column(String, nullable=True)
+    address2 = Column(String, nullable=True)
+    address3 = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    state_or_province = Column(String, nullable=True)
+    postal_code = Column(String, nullable=True)
+    country = Column(String, nullable=True)
+    region = Column(String, nullable=True)
     sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
     sdn_entity = relationship("SDNEntity", back_populates="addresses")
 
-class Document(Base):
-    """
-    SQLAlchemy model for storing documents.
-    """
-    __tablename__ = "documents"
-    id = Column(Integer, primary_key=True, index=True)
-    doc_type = Column(String)
-    doc_number = Column(String)
-    issuing_country = Column(String)
-    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
-    # Relationships
-    sdn_entity = relationship("SDNEntity", back_populates="documents")
 
 class Program(Base):
     """
@@ -108,7 +181,9 @@ class Nationality(Base):
     """
     __tablename__ = "nationalities"
     id = Column(Integer, primary_key=True, index=True)
-    iso_code = Column(String)
+    uid = Column(Integer, nullable=False)
+    country = Column(String, nullable=False)
+    main_entry = Column(Boolean, nullable=False)
     sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
     sdn_entity = relationship("SDNEntity", back_populates="nationalities")
@@ -116,32 +191,16 @@ class Nationality(Base):
 
 class Vessel(Base):
     """
-    SQLAlchemy model for storing vessels.
+    SQLAlchemy model for storing vessel information.
     """
     __tablename__ = "vessels"
     id = Column(Integer, primary_key=True, index=True)
-    call_sign = Column(String)
-    vessel_type = Column(String)
-    tonnage = Column(String)
-    grt = Column(String)
-    flag = Column(String)
-    owner = Column(String)
+    call_sign = Column(String, nullable=True)
+    vessel_type = Column(String, nullable=True)
+    vessel_flag = Column(String, nullable=True)
+    vessel_owner = Column(String, nullable=True)
+    tonnage = Column(Integer, nullable=True)
+    gross_registered_tonnage = Column(Integer, nullable=True)
     sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
     # Relationships
-    sdn_entity = relationship("SDNEntity", back_populates="vessel")
-
-
-class Aircraft(Base):
-    """
-    SQLAlchemy model for storing aircraft.
-    """
-    __tablename__ = "aircraft"
-    id = Column(Integer, primary_key=True, index=True)
-    tail_number = Column(String)
-    aircraft_type = Column(String)
-    manufacturer = Column(String)
-    model = Column(String)
-    registration_location = Column(String)
-    sdn_entity_id = Column(Integer, ForeignKey("sdn_entities.id"))
-    # Relationships
-    sdn_entity = relationship("SDNEntity", back_populates="aircraft")
+    sdn_entity = relationship("SDNEntity", uselist=False)

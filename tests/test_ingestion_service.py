@@ -16,121 +16,247 @@ from open_graph_intel.ingestion.service import (
 
 # Sample XML and XSD content for testing
 SAMPLE_XML = """<?xml version="1.0"?>
-<DistinctParties>
-    <DistinctParty>
+<sdnList xmlns="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML">
+    <publshInformation>
+        <Publish_Date>2025-05-11</Publish_Date>
+        <Record_Count>1</Record_Count>
+    </publshInformation>
+    <sdnEntry>
         <uid>123</uid>
-        <first_name>John</first_name>
-        <last_name>Doe</last_name>
-        <sdn_type>Individual</sdn_type>
+        <firstName>John</firstName>
+        <lastName>Doe</lastName>
+        <title>Mr.</title>
+        <sdnType>Individual</sdnType>
         <remarks>Test remarks</remarks>
         <programList>
             <program>Program1</program>
         </programList>
         <akaList>
             <aka>
-                <wholeName>John D.</wholeName>
+                <uid>1</uid>
+                <type>Alias</type>
+                <category>Primary</category>
+                <lastName>Doe</lastName>
+                <firstName>John</firstName>
             </aka>
         </akaList>
+        <idList>
+            <id>
+                <uid>1</uid>
+                <idType>Passport</idType>
+                <idNumber>123456789</idNumber>
+                <idCountry>US</idCountry>
+                <issueDate>2020-01-01</issueDate>
+                <expirationDate>2030-01-01</expirationDate>
+            </id>
+        </idList>
         <nationalityList>
             <nationality>
-                <isoCode>US</isoCode>
+                <uid>1</uid>
+                <country>US</country>
+                <mainEntry>true</mainEntry>
             </nationality>
         </nationalityList>
+        <citizenshipList>
+            <citizenship>
+                <uid>1</uid>
+                <country>US</country>
+                <mainEntry>true</mainEntry>
+            </citizenship>
+        </citizenshipList>
+        <dateOfBirthList>
+            <dateOfBirthItem>
+                <uid>1</uid>
+                <dateOfBirth>1980-01-01</dateOfBirth>
+                <mainEntry>true</mainEntry>
+            </dateOfBirthItem>
+        </dateOfBirthList>
+        <placeOfBirthList>
+            <placeOfBirthItem>
+                <uid>1</uid>
+                <placeOfBirth>New York</placeOfBirth>
+                <mainEntry>true</mainEntry>
+            </placeOfBirthItem>
+        </placeOfBirthList>
         <addressList>
             <address>
-                <address>123 Main St</address>
+                <uid>1</uid>
+                <address1>123 Main St</address1>
+                <address2>Apt 4B</address2>
+                <address3></address3>
                 <city>New York</city>
-                <state>NY</state>
+                <stateOrProvince>NY</stateOrProvince>
                 <postalCode>10001</postalCode>
                 <country>USA</country>
+                <region>North America</region>
             </address>
         </addressList>
-        <documentList>
-            <document>
-                <idType>Passport</idType>
-                <number>123456789</number>
-                <country>US</country>
-            </document>
-        </documentList>
-    </DistinctParty>
-</DistinctParties>
+        <vesselInfo>
+            <callSign>ABC123</callSign>
+            <vesselType>Cargo</vesselType>
+            <vesselFlag>US</vesselFlag>
+            <vesselOwner>Owner Name</vesselOwner>
+            <tonnage>5000</tonnage>
+            <grossRegisteredTonnage>6000</grossRegisteredTonnage>
+        </vesselInfo>
+    </sdnEntry>
+</sdnList>
 """
 
 SAMPLE_XSD = """<?xml version="1.0"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:element name="DistinctParties">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML" targetNamespace="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML" elementFormDefault="qualified">
+    <xs:element name="sdnList">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="DistinctParty" maxOccurs="unbounded">
+                <xs:element name="publshInformation" maxOccurs="1">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="uid" type="xs:string"/>
-                            <xs:element name="first_name" type="xs:string"/>
-                            <xs:element name="last_name" type="xs:string"/>
-                            <xs:element name="sdn_type" type="xs:string"/>
+                            <xs:element name="Publish_Date" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="Record_Count" type="xs:int" minOccurs="0" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="sdnEntry" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="uid" type="xs:int"/>
+                            <xs:element name="firstName" type="xs:string" minOccurs="0"/>
+                            <xs:element name="lastName" type="xs:string"/>
+                            <xs:element name="title" type="xs:string" minOccurs="0"/>
+                            <xs:element name="sdnType" type="xs:string"/>
                             <xs:element name="remarks" type="xs:string" minOccurs="0"/>
-                            <xs:element name="programList" minOccurs="0">
+                            <xs:element name="programList" minOccurs="1" maxOccurs="1">
                                 <xs:complexType>
                                     <xs:sequence>
-                                        <xs:element name="program" type="xs:string" maxOccurs="unbounded"/>
+                                        <xs:element name="program" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
                                     </xs:sequence>
                                 </xs:complexType>
                             </xs:element>
-                            <xs:element name="akaList" minOccurs="0">
+                            <xs:element name="akaList" maxOccurs="1" minOccurs="0">
                                 <xs:complexType>
                                     <xs:sequence>
                                         <xs:element name="aka" minOccurs="0" maxOccurs="unbounded">
                                             <xs:complexType>
                                                 <xs:sequence>
-                                                    <xs:element name="wholeName" type="xs:string"/>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="type" type="xs:string"/>
+                                                    <xs:element name="category" type="xs:string"/>
+                                                    <xs:element name="lastName" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="firstName" type="xs:string" minOccurs="0"/>
                                                 </xs:sequence>
                                             </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>
                                 </xs:complexType>
                             </xs:element>
-                            <xs:element name="nationalityList" minOccurs="0">
+                            <xs:element name="idList" maxOccurs="1" minOccurs="0">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="id" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="idType" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="idNumber" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="idCountry" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="issueDate" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="expirationDate" type="xs:string" minOccurs="0"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nationalityList" minOccurs="0" maxOccurs="1">
                                 <xs:complexType>
                                     <xs:sequence>
                                         <xs:element name="nationality" minOccurs="0" maxOccurs="unbounded">
                                             <xs:complexType>
                                                 <xs:sequence>
-                                                    <xs:element name="isoCode" type="xs:string"/>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="country" type="xs:string"/>
+                                                    <xs:element name="mainEntry" type="xs:boolean"/>
                                                 </xs:sequence>
                                             </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>
                                 </xs:complexType>
                             </xs:element>
-                            <xs:element name="addressList" minOccurs="0">
+                            <xs:element name="citizenshipList" minOccurs="0" maxOccurs="1">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="citizenship" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="country" type="xs:string"/>
+                                                    <xs:element name="mainEntry" type="xs:boolean"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="dateOfBirthList" minOccurs="0" maxOccurs="1">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="dateOfBirthItem" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="dateOfBirth" type="xs:string"/>
+                                                    <xs:element name="mainEntry" type="xs:boolean"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="placeOfBirthList" minOccurs="0" maxOccurs="1">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="placeOfBirthItem" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="placeOfBirth" type="xs:string"/>
+                                                    <xs:element name="mainEntry" type="xs:boolean"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="addressList" maxOccurs="1" minOccurs="0">
                                 <xs:complexType>
                                     <xs:sequence>
                                         <xs:element name="address" minOccurs="0" maxOccurs="unbounded">
                                             <xs:complexType>
                                                 <xs:sequence>
-                                                    <xs:element name="address" type="xs:string"/>
-                                                    <xs:element name="city" type="xs:string"/>
-                                                    <xs:element name="state" type="xs:string"/>
-                                                    <xs:element name="postalCode" type="xs:string"/>
-                                                    <xs:element name="country" type="xs:string"/>
+                                                    <xs:element name="uid" type="xs:int"/>
+                                                    <xs:element name="address1" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="address2" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="address3" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="city" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="stateOrProvince" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="postalCode" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="country" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="region" type="xs:string" minOccurs="0"/>
                                                 </xs:sequence>
                                             </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>
                                 </xs:complexType>
                             </xs:element>
-                            <xs:element name="documentList" minOccurs="0">
+                            <xs:element name="vesselInfo" minOccurs="0" maxOccurs="1">
                                 <xs:complexType>
                                     <xs:sequence>
-                                        <xs:element name="document" minOccurs="0" maxOccurs="unbounded">
-                                            <xs:complexType>
-                                                <xs:sequence>
-                                                    <xs:element name="idType" type="xs:string"/>
-                                                    <xs:element name="number" type="xs:string"/>
-                                                    <xs:element name="country" type="xs:string"/>
-                                                </xs:sequence>
-                                            </xs:complexType>
-                                        </xs:element>
+                                        <xs:element name="callSign" type="xs:string" minOccurs="0"/>
+                                        <xs:element name="vesselType" type="xs:string" minOccurs="0"/>
+                                        <xs:element name="vesselFlag" type="xs:string" minOccurs="0"/>
+                                        <xs:element name="vesselOwner" type="xs:string" minOccurs="0"/>
+                                        <xs:element name="tonnage" type="xs:int" minOccurs="0"/>
+                                        <xs:element name="grossRegisteredTonnage" type="xs:int" minOccurs="0"/>
                                     </xs:sequence>
                                 </xs:complexType>
                             </xs:element>

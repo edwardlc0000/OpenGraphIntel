@@ -14,13 +14,16 @@ from .service import (
 
 from .model import (
     SDNEntity,
-    Alias,
     Address,
-    Document,
     Program,
     Nationality,
     Vessel,
-    Aircraft
+    ID,
+    AKA,
+    DateOfBirth,
+    PlaceOfBirth,
+    Citizenship,
+    PublishInformation
 )
 
 __all__ = []

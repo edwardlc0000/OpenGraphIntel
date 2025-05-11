@@ -18,13 +18,16 @@ from open_graph_intel.ingestion.service import (
 
 from open_graph_intel.ingestion.model import (
     SDNEntity,
-    Alias,
     Address,
-    Document,
     Program,
     Nationality,
     Vessel,
-    Aircraft
+    ID,
+    AKA,
+    DateOfBirth,
+    PlaceOfBirth,
+    Citizenship,
+    PublishInformation
 )
 
 # Initialize the FastAPI router
