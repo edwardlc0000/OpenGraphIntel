@@ -37,7 +37,7 @@ def get_milvus_config() -> tuple[str, str]:
         raise
 
 # Lazy initialization of the Milvus host and port
-def connect_to_milvus():
+def connect_to_milvus() -> None:
     """
     Connects to the Milvus server using the host and port from environment variables.
     """
@@ -55,7 +55,7 @@ def connect_to_milvus():
         logger.info("Already connected to Milvus.")
 
 # Define a collection schema
-def create_collection(collection_name):
+def create_collection(collection_name) -> Collection:
     """
     Create a collection in Milvus with the specified schema.
     Args:
@@ -72,7 +72,7 @@ def create_collection(collection_name):
     return collection
 
 # Insert vectors
-def insert_vectors(collection_name, ids, embeddings):
+def insert_vectors(collection_name, ids, embeddings) -> None:
     """
     Insert vectors into the specified collection.
     Args:
@@ -95,7 +95,7 @@ def insert_vectors(collection_name, ids, embeddings):
         raise
     finally:
         collection.flush()
-        logger.info(f"Flushed collection {collection_name} after insertion.")
+        logger.info(f"Flushed collection {collection_name}.")
 
 # Search vectors
 def search_vectors(collection_name, query_vectors, top_k=5):
@@ -117,11 +117,9 @@ def search_vectors(collection_name, query_vectors, top_k=5):
             param=search_params,
             limit=top_k,
             expr=None
-        )
+        )        
+        logger.info(f"Search completed in collection {collection_name}.")
+        return results
     except Exception as e:
         logger.error(f"Error searching vectors: {e}")
         raise
-    finally:
-        logger.info(f"Search completed in collection {collection_name}.")
-
-    return results
