@@ -1,4 +1,5 @@
 # OpenGraphIntel
 
-![Coverage](https://img.shields.io/badge/coverage-dynamic-blue)
+![Coverage](https://codecov.io/gh/edwardlc0000/OpenGraphIntel/branch/main/graph/badge.svg)
+     
    
