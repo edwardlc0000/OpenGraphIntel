@@ -48,6 +48,18 @@ def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
     mock_create_engine.assert_called_once_with("postgresql://test_user:test_password@localhost:5432/test_db")
 
 @patch("open_graph_intel.data_layer.database.create_engine")
+@patch("open_graph_intel.data_layer.database.construct_postgres_url")
+def test_construct_engine_existing_engine(mock_construct_postgres_url, mock_create_engine):
+    """Test construct_engine with a valid database URL."""
+    mock_construct_postgres_url.return_value = "postgresql://test_user:test_password@localhost:5432/test_db"
+    mock_create_engine.return_value = MagicMock(spec=Engine)
+
+    engine = db_module.construct_engine()
+    engine = db_module.construct_engine()  # Call again to check for existing engine
+    assert engine == mock_create_engine.return_value
+    mock_construct_postgres_url.assert_called_once()
+
+@patch("open_graph_intel.data_layer.database.create_engine")
 def test_construct_engine_creation_failure(mock_create_engine):
     """Test construct_engine when create_engine raises an exception."""
     mock_create_engine.side_effect = Exception("Engine creation failed")
