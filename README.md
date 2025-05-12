@@ -1,6 +1,6 @@
 # OpenGraphIntel
 
-[![codecov](https://codecov.io/gh/edwardlc0000/OpenGraphIntel/graph/badge.svg?token=AP2VHX57NM)](https://codecov.io/gh/edwardlc0000/OpenGraphIntel)
+![License](https://img.shields.io/github/license/edwardlc0000/OpenGraphIntel) [![codecov](https://codecov.io/gh/edwardlc0000/OpenGraphIntel/graph/badge.svg?token=AP2VHX57NM)](https://codecov.io/gh/edwardlc0000/OpenGraphIntel)
 
 OpenGraphIntel is an open-source tool designed to explore sanctions networks and visualize the connections between entities. It provides a user-friendly interface for searching and analyzing data, making it easier to understand complex relationships.
 
