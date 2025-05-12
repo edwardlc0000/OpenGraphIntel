@@ -3,22 +3,23 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from pymilvus import connections, Collection, FieldSchema, CollectionSchema, DataType
-from open_graph_intel.data_layer.vectorstore import (
-    get_milvus_config,
-    connect_to_milvus,
-    create_collection,
-    insert_vectors,
-    search_vectors,
-)
+import open_graph_intel.data_layer.vectorstore as vectorstore
+
+@pytest.fixture(autouse=True)
+def reset_globals():
+    """Reset global variables before each test."""
+    vectorstore._milvus_host = None
+    vectorstore._milvus_grpc_port = None
+    pass
 
 # Test get_milvus_config
 @patch("open_graph_intel.data_layer.vectorstore.get_env_variable")
 def test_get_milvus_config(mock_get_env_variable):
     # Mock environment variables
     mock_get_env_variable.side_effect = lambda key: "mock_host" if key == "MILVUS_HOST" else "mock_port"
-    
-    host, port = get_milvus_config()
-    
+
+    host, port = vectorstore.get_milvus_config()
+
     assert host == "mock_host"
     assert port == "mock_port"
     mock_get_env_variable.assert_any_call("MILVUS_HOST")
@@ -28,9 +29,9 @@ def test_get_milvus_config(mock_get_env_variable):
 def test_get_milvus_config_fail(mock_get_env_variable):
     # Simulate missing environment variable
     mock_get_env_variable.side_effect = ValueError("Environment variable not found")
-    
+
     with pytest.raises(ValueError, match="Environment variable not found"):
-        get_milvus_config()
+        vectorstore.get_milvus_config()
 
 # Test connect_to_milvus
 @patch("open_graph_intel.data_layer.vectorstore.connections")
@@ -39,12 +40,26 @@ def test_connect_to_milvus(mock_get_milvus_config, mock_connections):
     # Mock Milvus connection
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
     mock_connections.has_connection.return_value = False
-    
-    connect_to_milvus()
-    
+
+    vectorstore.connect_to_milvus()
+
     mock_get_milvus_config.assert_called_once()
     mock_connections.connect.assert_called_once_with(host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_once_with("default")
+
+@patch("open_graph_intel.data_layer.vectorstore.connections")
+@patch("open_graph_intel.data_layer.vectorstore.get_milvus_config")
+def test_connect_to_milvus_with_existing_connection(mock_get_milvus_config, mock_connections):
+    # Mock Milvus connection
+    mock_get_milvus_config.return_value = ("mock_host", "mock_port")
+    mock_connections.has_connection.return_value = False
+
+    vectorstore.connect_to_milvus()
+    vectorstore.connect_to_milvus()  # Call again to check for existing connection
+
+    mock_get_milvus_config.assert_called_once()
+    mock_connections.connect.assert_called_with(host="mock_host", port="mock_port")
+    mock_connections.has_connection.assert_called_with("default")
 
 # Test create_collection
 @patch("open_graph_intel.data_layer.vectorstore.Collection")
@@ -68,7 +83,7 @@ def test_create_collection(mock_field_schema, mock_collection_schema, mock_conne
     mock_collection.return_value = MagicMock()
 
     collection_name = "test_collection"
-    collection = create_collection(collection_name)
+    collection = vectorstore.create_collection(collection_name)
 
     # Assert that connect_to_milvus is called
     mock_connect_to_milvus.assert_called_once()
@@ -97,13 +112,13 @@ def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     # Mock vector insertion
     mock_collection.exists.return_value = False
     mock_collection.return_value = MagicMock()
-    
+
     collection_name = "test_collection"
     ids = [1, 2, 3]
     embeddings = [[0.1] * 1024, [0.2] * 1024, [0.3] * 1024]
-    
-    insert_vectors(collection_name, ids, embeddings)
-    
+
+    vectorstore.insert_vectors(collection_name, ids, embeddings)
+
     # Verify that connect_to_milvus is called (but not necessarily only once)
     assert mock_connect_to_milvus.call_count > 0
 
@@ -123,13 +138,13 @@ def test_search_vectors(mock_connect_to_milvus, mock_collection):
     # Mock vector search
     mock_collection.return_value = MagicMock()
     mock_collection.return_value.search.return_value = "mock_results"
-    
+
     collection_name = "test_collection"
     query_vectors = [[0.1] * 1024]
     top_k = 5
-    
-    results = search_vectors(collection_name, query_vectors, top_k)
-    
+
+    results = vectorstore.search_vectors(collection_name, query_vectors, top_k)
+
     mock_connect_to_milvus.assert_called_once()
     mock_collection.assert_called_once_with(collection_name)
     mock_collection.return_value.search.assert_called_once_with(
@@ -140,4 +155,3 @@ def test_search_vectors(mock_connect_to_milvus, mock_collection):
         expr=None
     )
     assert results == "mock_results"
-

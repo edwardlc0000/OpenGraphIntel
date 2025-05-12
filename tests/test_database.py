@@ -49,7 +49,7 @@ def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
 
 @patch("open_graph_intel.data_layer.database.create_engine")
 @patch("open_graph_intel.data_layer.database.construct_postgres_url")
-def test_construct_engine_existing_engine(mock_construct_postgres_url, mock_create_engine):
+def test_construct_engine_with_existing_engine(mock_construct_postgres_url, mock_create_engine):
     """Test construct_engine with a valid database URL."""
     mock_construct_postgres_url.return_value = "postgresql://test_user:test_password@localhost:5432/test_db"
     mock_create_engine.return_value = MagicMock(spec=Engine)
