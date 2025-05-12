@@ -7,6 +7,14 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 import open_graph_intel.data_layer.database as db_module
 
+
+@pytest.fixture(autouse=True)
+def reset_globals():
+    """Reset global variables before each test."""
+    db_module._engine = None
+    db_module._session_factory = None
+    db_module._Base = None
+
 # Test construct_postgres_url
 @patch("open_graph_intel.data_layer.database.get_env_variable")
 def test_construct_postgres_url(mock_get_env_variable):
@@ -32,8 +40,6 @@ def test_construct_postgres_url_missing_env_var(mock_get_env_variable):
 @patch("open_graph_intel.data_layer.database.construct_postgres_url")
 def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
     """Test construct_engine with a valid database URL."""
-    from open_graph_intel.data_layer.database import _engine
-    _engine = None  # Reset the global _engine
     mock_construct_postgres_url.return_value = "postgresql://test_user:test_password@localhost:5432/test_db"
     mock_create_engine.return_value = MagicMock(spec=Engine)
 
@@ -44,7 +50,6 @@ def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
 @patch("open_graph_intel.data_layer.database.create_engine")
 def test_construct_engine_creation_failure(mock_create_engine):
     """Test construct_engine when create_engine raises an exception."""
-    db_module._engine = None  # Reset the global _engine
     mock_create_engine.side_effect = Exception("Engine creation failed")
     with pytest.raises(RuntimeError, match="Failed to create database engine."):
         db_module.construct_engine(database_url="postgresql://user:pass@localhost:5432/db")
@@ -52,7 +57,6 @@ def test_construct_engine_creation_failure(mock_create_engine):
 @patch("open_graph_intel.data_layer.database.create_engine")
 def test_construct_engine_retry_logic(mock_create_engine):
     """Test construct_engine retry logic when engine creation fails."""
-    db_module._engine = None  # Reset the global _engine
     mock_create_engine.side_effect = Exception("Engine creation failed")
     with patch("open_graph_intel.data_layer.database.logger") as mock_logger:
         with pytest.raises(RuntimeError, match="Failed to create database engine."):
