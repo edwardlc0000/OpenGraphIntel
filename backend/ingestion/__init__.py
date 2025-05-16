@@ -1,7 +1,7 @@
-# open_graph_intel/ingestion/__init__.py
+# backend/ingestion/__init__.py
 
 """
-This module provides the ingestion service for open_graph_intel.
+This module provides the ingestion service for backend.
 """
 
 from .main import (load_sdn_data)

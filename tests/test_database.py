@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
-import open_graph_intel.data_layer.database as db_module
+import backend.data_layer.database as db_module
 
 
 @pytest.fixture(autouse=True)
@@ -16,7 +16,7 @@ def reset_globals():
     db_module._Base = None
 
 # Test construct_postgres_url
-@patch("open_graph_intel.data_layer.database.get_env_variable")
+@patch("backend.data_layer.database.get_env_variable")
 def test_construct_postgres_url(mock_get_env_variable):
     mock_get_env_variable.side_effect = lambda key: {
         "POSTGRES_DB": "test_db",
@@ -29,15 +29,15 @@ def test_construct_postgres_url(mock_get_env_variable):
     expected_url = "postgresql://test_user:test_password@localhost:5432/test_db"
     assert db_module.construct_postgres_url() == expected_url
 
-@patch("open_graph_intel.data_layer.database.get_env_variable")
+@patch("backend.data_layer.database.get_env_variable")
 def test_construct_postgres_url_missing_env_var(mock_get_env_variable):
     mock_get_env_variable.side_effect = ValueError("Missing environment variable")
     with pytest.raises(ValueError):
         db_module.construct_postgres_url()
 
 # Test construct_engine
-@patch("open_graph_intel.data_layer.database.create_engine")
-@patch("open_graph_intel.data_layer.database.construct_postgres_url")
+@patch("backend.data_layer.database.create_engine")
+@patch("backend.data_layer.database.construct_postgres_url")
 def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
     """Test construct_engine with a valid database URL."""
     mock_construct_postgres_url.return_value = "postgresql://test_user:test_password@localhost:5432/test_db"
@@ -47,8 +47,8 @@ def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
     assert engine == mock_create_engine.return_value
     mock_create_engine.assert_called_once_with("postgresql://test_user:test_password@localhost:5432/test_db")
 
-@patch("open_graph_intel.data_layer.database.create_engine")
-@patch("open_graph_intel.data_layer.database.construct_postgres_url")
+@patch("backend.data_layer.database.create_engine")
+@patch("backend.data_layer.database.construct_postgres_url")
 def test_construct_engine_with_existing_engine(mock_construct_postgres_url, mock_create_engine):
     """Test construct_engine with a valid database URL."""
     mock_construct_postgres_url.return_value = "postgresql://test_user:test_password@localhost:5432/test_db"
@@ -59,18 +59,18 @@ def test_construct_engine_with_existing_engine(mock_construct_postgres_url, mock
     assert engine == mock_create_engine.return_value
     mock_construct_postgres_url.assert_called_once()
 
-@patch("open_graph_intel.data_layer.database.create_engine")
+@patch("backend.data_layer.database.create_engine")
 def test_construct_engine_creation_failure(mock_create_engine):
     """Test construct_engine when create_engine raises an exception."""
     mock_create_engine.side_effect = Exception("Engine creation failed")
     with pytest.raises(RuntimeError, match="Failed to create database engine."):
         db_module.construct_engine(database_url="postgresql://user:pass@localhost:5432/db")
 
-@patch("open_graph_intel.data_layer.database.create_engine")
+@patch("backend.data_layer.database.create_engine")
 def test_construct_engine_retry_logic(mock_create_engine):
     """Test construct_engine retry logic when engine creation fails."""
     mock_create_engine.side_effect = Exception("Engine creation failed")
-    with patch("open_graph_intel.data_layer.database.logger") as mock_logger:
+    with patch("backend.data_layer.database.logger") as mock_logger:
         with pytest.raises(RuntimeError, match="Failed to create database engine."):
             db_module.construct_engine(database_url="postgresql://user:pass@localhost:5432/db", retries=3)
         assert mock_logger.info.call_count == 3  # Ensure retries are logged
@@ -78,7 +78,7 @@ def test_construct_engine_retry_logic(mock_create_engine):
 
 
 # Test construct_session
-@patch("open_graph_intel.data_layer.database.construct_engine")
+@patch("backend.data_layer.database.construct_engine")
 def test_construct_session(mock_construct_engine):
     mock_engine = MagicMock(spec=Engine)
     mock_construct_engine.return_value = mock_engine
@@ -93,7 +93,7 @@ def test_construct_base():
     assert base.metadata is not None
 
 # Test get_db
-@patch("open_graph_intel.data_layer.database.construct_session")
+@patch("backend.data_layer.database.construct_session")
 def test_get_db(mock_construct_session):
     mock_session = MagicMock()
     mock_construct_session.return_value = MagicMock(return_value=mock_session)

@@ -1,4 +1,4 @@
-# open_graph_intel/data_layer/vectorstore.py
+# backend/data_layer/vectorstore.py
 
 # Import dependencies
 import logging
@@ -6,7 +6,7 @@ from pymilvus import connections, Collection, FieldSchema, CollectionSchema, Dat
 from typing import Final
 
 # Import custom modules
-from open_graph_intel.common.utils import get_env_variable
+from backend.common.utils import get_env_variable
 
 # Configure logging
 logger = logging.getLogger(__name__)

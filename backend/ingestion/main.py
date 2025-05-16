@@ -1,4 +1,4 @@
-# open_graph_intel/ingestion/main.py
+# backend/ingestion/main.py
 
 # Import dependencies
 import logging
@@ -8,15 +8,15 @@ from starlette.routing import Router
 
 
 # Import custom modules
-from open_graph_intel.data_layer.database import get_db
-from open_graph_intel.ingestion.service import (
+from backend.data_layer.database import get_db
+from backend.ingestion.service import (
     download_sdn_files,
     validate_sdn_xml,
     parse_sdn_xml,
     store_sdn_data
 )
 
-from open_graph_intel.ingestion.model import (
+from backend.ingestion.model import (
     SDNEntity,
     Address,
     Program,

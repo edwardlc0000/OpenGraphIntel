@@ -1,11 +1,11 @@
-# open_graph_intel/data_layer/graphdb.py
+# backend/data_layer/graphdb.py
 
 # Import dependencies
 import logging
 from neo4j import Driver, GraphDatabase
 
 # Import custom modules
-from open_graph_intel.common.utils import get_env_variable
+from backend.common.utils import get_env_variable
 
 # Configure logging
 logger = logging.getLogger(__name__)

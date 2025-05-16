@@ -1,4 +1,4 @@
-# open_graph_intel/common/utils.py
+# backend/common/utils.py
 
 import os
 import logging

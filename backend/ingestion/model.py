@@ -1,4 +1,4 @@
-# open_graph_intel/ingestion/model.py
+# backend/ingestion/model.py
 
 # Import dependencies
 import logging
@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 # Import custom modules
-from open_graph_intel.data_layer.database import construct_base
+from backend.data_layer.database import construct_base
 
 # Configure logging
 logger = logging.getLogger(__name__)

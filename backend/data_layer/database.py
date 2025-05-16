@@ -1,4 +1,4 @@
-#open_graph_intel/data_layer/database.py
+#backend/data_layer/database.py
 
 # Import dependencies
 import logging
@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker, declarative_b
 from typing import Final
 
 # Import custom modules
-from open_graph_intel.common.utils import get_env_variable
+from backend.common.utils import get_env_variable
 
 # Configure logging
 logger = logging.getLogger(__name__)

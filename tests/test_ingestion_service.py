@@ -7,7 +7,7 @@ import requests
 from unittest.mock import patch, mock_open, MagicMock
 from lxml import etree
 from sqlalchemy.orm import Session
-from open_graph_intel.ingestion.service import (
+from backend.ingestion.service import (
     download_sdn_files,
     validate_sdn_xml,
     parse_sdn_xml,

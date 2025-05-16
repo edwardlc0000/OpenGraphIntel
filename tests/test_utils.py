@@ -1,7 +1,7 @@
 # tests/test_utils.py
 
 import pytest
-from open_graph_intel.common.utils import get_env_variable
+from backend.common.utils import get_env_variable
 
 def test_get_env_variable_existing(monkeypatch):
     # Use monkeypatch to set an environment variable

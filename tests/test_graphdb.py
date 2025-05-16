@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-from open_graph_intel.data_layer.graphdb import (
+from backend.data_layer.graphdb import (
     get_neo4j_config,
     get_neo4j_driver,
     create_node,
@@ -10,7 +10,7 @@ from open_graph_intel.data_layer.graphdb import (
 )
 
 # Test get_neo4j_config
-@patch("open_graph_intel.data_layer.graphdb.get_env_variable")
+@patch("backend.data_layer.graphdb.get_env_variable")
 def test_get_neo4j_config(mock_get_env_variable):
     mock_get_env_variable.side_effect = lambda key: {
         "NEO4J_URI": "bolt://localhost:7687",
@@ -25,8 +25,8 @@ def test_get_neo4j_config(mock_get_env_variable):
     mock_get_env_variable.assert_any_call("NEO4J_PASSWORD")
 
 # Test get_neo4j_driver
-@patch("open_graph_intel.data_layer.graphdb.GraphDatabase.driver")
-@patch("open_graph_intel.data_layer.graphdb.get_neo4j_config")
+@patch("backend.data_layer.graphdb.GraphDatabase.driver")
+@patch("backend.data_layer.graphdb.get_neo4j_config")
 def test_get_neo4j_driver(mock_get_neo4j_config, mock_driver):
     mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
     mock_driver.return_value = MagicMock()
@@ -39,7 +39,7 @@ def test_get_neo4j_driver(mock_get_neo4j_config, mock_driver):
     )
 
 # Test create_node
-@patch("open_graph_intel.data_layer.graphdb.logger")
+@patch("backend.data_layer.graphdb.logger")
 def test_create_node(mock_logger):
     mock_tx = MagicMock()
     label = "Person"
@@ -55,7 +55,7 @@ def test_create_node(mock_logger):
     )
 
 # Test create_relationship
-@patch("open_graph_intel.data_layer.graphdb.logger")
+@patch("backend.data_layer.graphdb.logger")
 def test_create_relationship(mock_logger):
     mock_tx = MagicMock()
     start_node = 1

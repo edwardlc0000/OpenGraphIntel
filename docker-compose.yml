@@ -100,7 +100,7 @@ services:
   ingestion:
     build:
       context: .
-      dockerfile: open_graph_intel/ingestion/Dockerfile
+      dockerfile: backend/ingestion/Dockerfile
     container_name: ingestion
     restart: always
     environment:

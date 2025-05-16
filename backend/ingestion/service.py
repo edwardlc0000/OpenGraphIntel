@@ -1,4 +1,4 @@
-# open_graph_intel/ingestion/service.py
+# backend/ingestion/service.py
 
 # Import dependencies
 import logging
@@ -7,7 +7,7 @@ from lxml import etree
 from sqlalchemy.orm import Session
 
 # Import custom modules
-from open_graph_intel.ingestion.model import (
+from backend.ingestion.model import (
     SDNEntity,
     Address,
     Program,
