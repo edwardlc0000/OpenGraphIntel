@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from pymilvus import connections, Collection, FieldSchema, CollectionSchema, DataType
-import open_graph_intel.data_layer.vectorstore as vectorstore
+import backend.data_layer.vectorstore as vectorstore
 
 @pytest.fixture(autouse=True)
 def reset_globals():
@@ -13,7 +13,7 @@ def reset_globals():
     pass
 
 # Test get_milvus_config
-@patch("open_graph_intel.data_layer.vectorstore.get_env_variable")
+@patch("backend.data_layer.vectorstore.get_env_variable")
 def test_get_milvus_config(mock_get_env_variable):
     # Mock environment variables
     mock_get_env_variable.side_effect = lambda key: "mock_host" if key == "MILVUS_HOST" else "mock_port"
@@ -25,7 +25,7 @@ def test_get_milvus_config(mock_get_env_variable):
     mock_get_env_variable.assert_any_call("MILVUS_HOST")
     mock_get_env_variable.assert_any_call("MILVUS_GRPC_PORT")
 
-@patch("open_graph_intel.data_layer.vectorstore.get_env_variable")
+@patch("backend.data_layer.vectorstore.get_env_variable")
 def test_get_milvus_config_fail(mock_get_env_variable):
     # Simulate missing environment variable
     mock_get_env_variable.side_effect = ValueError("Environment variable not found")
@@ -34,8 +34,8 @@ def test_get_milvus_config_fail(mock_get_env_variable):
         vectorstore.get_milvus_config()
 
 # Test connect_to_milvus
-@patch("open_graph_intel.data_layer.vectorstore.connections")
-@patch("open_graph_intel.data_layer.vectorstore.get_milvus_config")
+@patch("backend.data_layer.vectorstore.connections")
+@patch("backend.data_layer.vectorstore.get_milvus_config")
 def test_connect_to_milvus(mock_get_milvus_config, mock_connections):
     # Mock Milvus connection
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
@@ -47,8 +47,8 @@ def test_connect_to_milvus(mock_get_milvus_config, mock_connections):
     mock_connections.connect.assert_called_once_with(host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_once_with("default")
 
-@patch("open_graph_intel.data_layer.vectorstore.connections")
-@patch("open_graph_intel.data_layer.vectorstore.get_milvus_config")
+@patch("backend.data_layer.vectorstore.connections")
+@patch("backend.data_layer.vectorstore.get_milvus_config")
 def test_connect_to_milvus_with_existing_connection(mock_get_milvus_config, mock_connections):
     # Mock Milvus connection
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
@@ -61,11 +61,23 @@ def test_connect_to_milvus_with_existing_connection(mock_get_milvus_config, mock
     mock_connections.connect.assert_called_with(host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_with("default")
 
+
+@patch("backend.data_layer.vectorstore.connections")
+def test_connect_to_milvus_failure(mock_connections):
+    # Mock Milvus connection failure
+    mock_connections.has_connection.return_value = False
+    mock_connections.connect.side_effect = Exception("Connection failed")
+    with pytest.raises(RuntimeError, match="Failed to connect to Milvus."):
+        vectorstore.connect_to_milvus()
+    mock_connections.connect.assert_called_once_with(
+        host=vectorstore._milvus_host, port=vectorstore._milvus_grpc_port)
+    mock_connections.has_connection.assert_called_once_with("default")
+
 # Test create_collection
-@patch("open_graph_intel.data_layer.vectorstore.Collection")
-@patch("open_graph_intel.data_layer.vectorstore.connect_to_milvus")
-@patch("open_graph_intel.data_layer.vectorstore.CollectionSchema")
-@patch("open_graph_intel.data_layer.vectorstore.FieldSchema")
+@patch("backend.data_layer.vectorstore.Collection")
+@patch("backend.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vectorstore.CollectionSchema")
+@patch("backend.data_layer.vectorstore.FieldSchema")
 def test_create_collection(mock_field_schema, mock_collection_schema, mock_connect_to_milvus, mock_collection):
     # Predefine consistent MagicMock objects for FieldSchema
     field_id_mock = MagicMock(name="FieldSchema(id)")
@@ -106,8 +118,8 @@ def test_create_collection(mock_field_schema, mock_collection_schema, mock_conne
     assert collection is not None
 
 # Test insert_vectors
-@patch("open_graph_intel.data_layer.vectorstore.Collection")
-@patch("open_graph_intel.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vectorstore.Collection")
+@patch("backend.data_layer.vectorstore.connect_to_milvus")
 def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     # Mock vector insertion
     mock_collection.exists.return_value = False
@@ -132,8 +144,8 @@ def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     mock_collection.return_value.flush.assert_called_once()
 
 # Test search_vectors
-@patch("open_graph_intel.data_layer.vectorstore.Collection")
-@patch("open_graph_intel.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vectorstore.Collection")
+@patch("backend.data_layer.vectorstore.connect_to_milvus")
 def test_search_vectors(mock_connect_to_milvus, mock_collection):
     # Mock vector search
     mock_collection.return_value = MagicMock()
