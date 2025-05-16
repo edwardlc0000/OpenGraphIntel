@@ -22,54 +22,38 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="open_graph_intel\common\utils.py" />
-    <Compile Include="open_graph_intel\data_layer\database.py" />
-    <Compile Include="open_graph_intel\data_layer\graphdb.py" />
-    <Compile Include="open_graph_intel\data_layer\vectorstore.py" />
-    <Compile Include="open_graph_intel\data_layer\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\gateway\main.py" />
-    <Compile Include="open_graph_intel\gateway\model.py" />
-    <Compile Include="open_graph_intel\gateway\service.py" />
-    <Compile Include="open_graph_intel\gateway\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\graph\main.py" />
-    <Compile Include="open_graph_intel\graph\model.py" />
-    <Compile Include="open_graph_intel\graph\service.py" />
-    <Compile Include="open_graph_intel\graph\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\ingestion\main.py" />
-    <Compile Include="open_graph_intel\ingestion\model.py" />
-    <Compile Include="open_graph_intel\ingestion\service.py" />
-    <Compile Include="open_graph_intel\ingestion\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\llm_query\main.py" />
-    <Compile Include="open_graph_intel\llm_query\model.py" />
-    <Compile Include="open_graph_intel\llm_query\service.py" />
-    <Compile Include="open_graph_intel\llm_query\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\matcher\main.py" />
-    <Compile Include="open_graph_intel\matcher\model.py" />
-    <Compile Include="open_graph_intel\matcher\service.py" />
-    <Compile Include="open_graph_intel\matcher\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\nlp_enrichment\main.py" />
-    <Compile Include="open_graph_intel\nlp_enrichment\model.py" />
-    <Compile Include="open_graph_intel\nlp_enrichment\service.py" />
-    <Compile Include="open_graph_intel\nlp_enrichment\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="open_graph_intel\common\__init__.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="backend\common\utils.py" />
+    <Compile Include="backend\common\__init__.py" />
+    <Compile Include="backend\data_layer\database.py" />
+    <Compile Include="backend\data_layer\graphdb.py" />
+    <Compile Include="backend\data_layer\vectorstore.py" />
+    <Compile Include="backend\data_layer\__init__.py" />
+    <Compile Include="backend\gateway\main.py" />
+    <Compile Include="backend\gateway\model.py" />
+    <Compile Include="backend\gateway\service.py" />
+    <Compile Include="backend\gateway\__init__.py" />
+    <Compile Include="backend\graph\main.py" />
+    <Compile Include="backend\graph\model.py" />
+    <Compile Include="backend\graph\service.py" />
+    <Compile Include="backend\graph\__init__.py" />
+    <Compile Include="backend\ingestion\main.py" />
+    <Compile Include="backend\ingestion\model.py" />
+    <Compile Include="backend\ingestion\service.py" />
+    <Compile Include="backend\ingestion\__init__.py" />
+    <Compile Include="backend\llm_query\main.py" />
+    <Compile Include="backend\llm_query\model.py" />
+    <Compile Include="backend\llm_query\service.py" />
+    <Compile Include="backend\llm_query\__init__.py" />
+    <Compile Include="backend\matcher\main.py" />
+    <Compile Include="backend\matcher\model.py" />
+    <Compile Include="backend\matcher\service.py" />
+    <Compile Include="backend\matcher\__init__.py" />
+    <Compile Include="backend\nlp_enrichment\main.py" />
+    <Compile Include="backend\nlp_enrichment\model.py" />
+    <Compile Include="backend\nlp_enrichment\service.py" />
+    <Compile Include="backend\nlp_enrichment\__init__.py" />
+    <Compile Include="backend\__init__.py" />
     <Compile Include="tests\sentence_transformer_benchmark.py" />
-    <Compile Include="open_graph_intel\__init__.py" />
     <Compile Include="tests\test_database.py" />
     <Compile Include="tests\test_graphdb.py" />
     <Compile Include="tests\test_ingestion_service.py" />
@@ -91,28 +75,42 @@
   <ItemGroup>
     <Folder Include=".github\" />
     <Folder Include=".github\workflows\" />
+    <Folder Include="backend\" />
+    <Folder Include="backend\common\" />
+    <Folder Include="backend\common\__pycache__\" />
+    <Folder Include="backend\data_layer\" />
+    <Folder Include="backend\data_layer\__pycache__\" />
+    <Folder Include="backend\gateway\" />
+    <Folder Include="backend\graph\" />
+    <Folder Include="backend\ingestion\" />
+    <Folder Include="backend\ingestion\__pycache__\" />
+    <Folder Include="backend\llm_query\" />
+    <Folder Include="backend\matcher\" />
+    <Folder Include="backend\nlp_enrichment\" />
     <Folder Include="frontend\" />
     <Folder Include="tests\" />
-    <Folder Include="open_graph_intel\" />
-    <Folder Include="open_graph_intel\data_layer\" />
-    <Folder Include="open_graph_intel\gateway\" />
-    <Folder Include="open_graph_intel\graph\" />
-    <Folder Include="open_graph_intel\ingestion\" />
-    <Folder Include="open_graph_intel\llm_query\" />
-    <Folder Include="open_graph_intel\matcher\" />
-    <Folder Include="open_graph_intel\nlp_enrichment\" />
-    <Folder Include="open_graph_intel\common\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".env" />
     <Content Include=".github\workflows\test.yml" />
+    <Content Include="backend\common\__pycache__\utils.cpython-313.pyc" />
+    <Content Include="backend\common\__pycache__\__init__.cpython-313.pyc" />
+    <Content Include="backend\data_layer\__pycache__\database.cpython-313.pyc" />
+    <Content Include="backend\data_layer\__pycache__\db.cpython-313.pyc" />
+    <Content Include="backend\data_layer\__pycache__\graphdb.cpython-313.pyc" />
+    <Content Include="backend\data_layer\__pycache__\vectorstore.cpython-313.pyc" />
+    <Content Include="backend\data_layer\__pycache__\__init__.cpython-313.pyc" />
+    <Content Include="backend\ingestion\Dockerfile" />
+    <Content Include="backend\ingestion\ingestion-requirements.txt" />
+    <Content Include="backend\ingestion\__pycache__\main.cpython-313.pyc" />
+    <Content Include="backend\ingestion\__pycache__\model.cpython-313.pyc" />
+    <Content Include="backend\ingestion\__pycache__\service.cpython-313.pyc" />
+    <Content Include="backend\ingestion\__pycache__\__init__.cpython-313.pyc" />
+    <Content Include="backend\llm_query\Dockerfile" />
+    <Content Include="backend\matcher\Dockerfile" />
+    <Content Include="backend\nlp_enrichment\Dockerfile" />
     <Content Include="docker-compose.yml" />
     <Content Include="LICENSE.txt" />
-    <Content Include="open_graph_intel\ingestion\Dockerfile" />
-    <Content Include="open_graph_intel\ingestion\ingestion-requirements.txt" />
-    <Content Include="open_graph_intel\llm_query\Dockerfile" />
-    <Content Include="open_graph_intel\matcher\Dockerfile" />
-    <Content Include="open_graph_intel\nlp_enrichment\Dockerfile" />
     <Content Include="README.md" />
     <Content Include="requirements.txt" />
   </ItemGroup>
