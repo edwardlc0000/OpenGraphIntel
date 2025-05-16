@@ -32,17 +32,17 @@ def construct_postgres_url() -> str:
         str: The PostgreSQL URL.
     """
     try:
-        DB_NAME = get_env_variable("POSTGRES_DB")
-        USER = get_env_variable("POSTGRES_USER")
-        PASSWORD = get_env_variable("POSTGRES_PASSWORD")
-        HOST = get_env_variable("POSTGRES_HOST")
-        PORT = get_env_variable("POSTGRES_PORT")
+        DB_NAME: Final[str] = get_env_variable("POSTGRES_DB")
+        USER: Final[str] = get_env_variable("POSTGRES_USER")
+        PASSWORD: Final[str] = get_env_variable("POSTGRES_PASSWORD")
+        HOST: Final[str] = get_env_variable("POSTGRES_HOST")
+        PORT: Final[str] = get_env_variable("POSTGRES_PORT")
         return f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}"
     except ValueError as e:
         logger.error(f"Error retrieving environment variables: {e}")
         raise
 
-# Lazy intialization of the database engine
+# Lazy initialization of the database engine
 def construct_engine(database_url: str = None, retries: int = 5) -> Engine:
     """
     Creates a database engine with retry logic.
