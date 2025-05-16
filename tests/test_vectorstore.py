@@ -62,15 +62,17 @@ def test_connect_to_milvus_with_existing_connection(mock_get_milvus_config, mock
     mock_connections.has_connection.assert_called_with("default")
 
 
+@patch("backend.data_layer.vectorstore.get_milvus_config")
 @patch("backend.data_layer.vectorstore.connections")
-def test_connect_to_milvus_failure(mock_connections):
+def test_connect_to_milvus_failure(mock_connections, mock_get_milvus_config):
     # Mock Milvus connection failure
+    mock_get_milvus_config.return_value = ("mock_host", "mock_port")
     mock_connections.has_connection.return_value = False
     mock_connections.connect.side_effect = Exception("Connection failed")
     with pytest.raises(RuntimeError, match="Failed to connect to Milvus."):
         vectorstore.connect_to_milvus()
     mock_connections.connect.assert_called_once_with(
-        host=vectorstore._milvus_host, port=vectorstore._milvus_grpc_port)
+        host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_once_with("default")
 
 # Test create_collection
@@ -116,6 +118,24 @@ def test_create_collection(mock_field_schema, mock_collection_schema, mock_conne
 
     # Assert that the returned collection is not None
     assert collection is not None
+
+@patch("backend.data_layer.vectorstore.Collection")
+@patch("backend.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vectorstore.CollectionSchema")
+@patch("backend.data_layer.vectorstore.FieldSchema")
+def test_create_collection_failure(mock_field_schema, mock_collection_schema, mock_connect_to_milvus, mock_collection):
+    # Mock Milvus connection
+    mock_connect_to_milvus.return_value = None
+    # Mock Collection creation to raise an exception
+    mock_collection.side_effect = Exception("Collection creation failed")
+    collection_name = "test_collection"
+    with pytest.raises(Exception, match="Collection creation failed"):
+        vectorstore.create_collection(collection_name)
+    # Assert that connect_to_milvus is called
+    mock_connect_to_milvus.assert_called_once()
+    # Assert that Collection is attempted to be created
+    mock_collection.assert_called_once_with(
+        name=collection_name, schema=mock_collection_schema.return_value)
 
 # Test insert_vectors
 @patch("backend.data_layer.vectorstore.Collection")
