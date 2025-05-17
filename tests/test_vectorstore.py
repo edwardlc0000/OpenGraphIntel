@@ -61,6 +61,24 @@ def test_connect_to_milvus_with_existing_connection(mock_get_milvus_config, mock
     mock_connections.connect.assert_called_with(host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_with("default")
 
+@patch("backend.data_layer.vectorstore.connections")
+@patch("backend.data_layer.vectorstore.get_milvus_config")
+def test_connect_to_milvus_already_connected(mock_get_milvus_config, mock_connections):
+    # Simulate that the connection already exists
+    mock_get_milvus_config.return_value = ("mock_host", "mock_port")
+    mock_connections.has_connection.return_value = True
+
+    # Call the function
+    import backend.data_layer.vectorstore as vectorstore
+    vectorstore._milvus_host = None
+    vectorstore._milvus_grpc_port = None
+    vectorstore.connect_to_milvus()
+
+    # Should not call connect
+    mock_connections.connect.assert_not_called()
+    # Should call has_connection
+    mock_connections.has_connection.assert_called_once_with("default")
+
 
 @patch("backend.data_layer.vectorstore.get_milvus_config")
 @patch("backend.data_layer.vectorstore.connections")

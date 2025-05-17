@@ -49,6 +49,20 @@ def test_get_neo4j_driver(mock_get_neo4j_config, mock_driver):
 
 @patch("backend.data_layer.graphdb.GraphDatabase.driver")
 @patch("backend.data_layer.graphdb.get_neo4j_config")
+def test_get_neo4j_driver_with_existing_driver(mock_get_neo4j_config, mock_driver):
+    mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
+    mock_driver.return_value = MagicMock()
+
+    driver = graphdb.get_neo4j_driver()
+    driver = graphdb.get_neo4j_driver()
+    assert driver is not None
+    mock_get_neo4j_config.assert_called_once()
+    mock_driver.assert_called_once_with(
+        "bolt://localhost:7687", auth=("neo4j", "password")
+    )
+
+@patch("backend.data_layer.graphdb.GraphDatabase.driver")
+@patch("backend.data_layer.graphdb.get_neo4j_config")
 @patch("backend.data_layer.graphdb.logger")
 def test_get_neo4j_driver_failure(mock_logger, mock_get_neo4j_config, mock_driver):
     mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
