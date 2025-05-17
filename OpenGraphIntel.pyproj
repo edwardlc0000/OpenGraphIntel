@@ -26,6 +26,8 @@
     <Compile Include="backend\common\__init__.py" />
     <Compile Include="backend\data_layer\database.py" />
     <Compile Include="backend\data_layer\graphdb.py" />
+    <Compile Include="backend\data_layer\objectstore_aws.py" />
+    <Compile Include="backend\data_layer\objectstore_azure.py" />
     <Compile Include="backend\data_layer\vectorstore.py" />
     <Compile Include="backend\data_layer\__init__.py" />
     <Compile Include="backend\gateway\main.py" />
@@ -52,12 +54,13 @@
     <Compile Include="backend\nlp_enrichment\model.py" />
     <Compile Include="backend\nlp_enrichment\service.py" />
     <Compile Include="backend\nlp_enrichment\__init__.py" />
-    <Compile Include="backend\data_layer\objectstore.py" />
     <Compile Include="backend\__init__.py" />
     <Compile Include="tests\sentence_transformer_benchmark.py" />
     <Compile Include="tests\test_database.py" />
     <Compile Include="tests\test_graphdb.py" />
     <Compile Include="tests\test_ingestion_service.py" />
+    <Compile Include="tests\test_objectstore_aws.py" />
+    <Compile Include="tests\test_objectstore_azure.py" />
     <Compile Include="tests\test_utils.py" />
     <Compile Include="tests\test_vectorstore.py" />
     <Compile Include="tests\__init__.py" />
@@ -99,6 +102,7 @@
     <Content Include="backend\data_layer\__pycache__\database.cpython-313.pyc" />
     <Content Include="backend\data_layer\__pycache__\db.cpython-313.pyc" />
     <Content Include="backend\data_layer\__pycache__\graphdb.cpython-313.pyc" />
+    <Content Include="backend\data_layer\__pycache__\objectstore_aws.cpython-313.pyc" />
     <Content Include="backend\data_layer\__pycache__\vectorstore.cpython-313.pyc" />
     <Content Include="backend\data_layer\__pycache__\__init__.cpython-313.pyc" />
     <Content Include="backend\ingestion\Dockerfile" />

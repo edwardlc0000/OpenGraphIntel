@@ -17,6 +17,7 @@ unicode
 
 # BLOB storage
 minio
+azure-storage-blob
 
 # Vector store and embeddings
 pymilvus
