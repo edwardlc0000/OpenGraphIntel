@@ -2,12 +2,13 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-from backend.data_layer.graphdb import (
-    get_neo4j_config,
-    get_neo4j_driver,
-    create_node,
-    create_relationship,
-)
+import backend.data_layer.graphdb as graphdb
+
+
+@pytest.fixture(autouse=True)
+def reset_globals():
+    """Fixture to reset global variables before each test."""
+    graphdb._neo4j_driver = None
 
 # Test get_neo4j_config
 @patch("backend.data_layer.graphdb.get_env_variable")
@@ -18,11 +19,19 @@ def test_get_neo4j_config(mock_get_env_variable):
         "NEO4J_PASSWORD": "password",
     }[key]
 
-    config = get_neo4j_config()
+    config = graphdb.get_neo4j_config()
     assert config == ("bolt://localhost:7687", "neo4j", "password")
     mock_get_env_variable.assert_any_call("NEO4J_URI")
     mock_get_env_variable.assert_any_call("NEO4J_USER")
     mock_get_env_variable.assert_any_call("NEO4J_PASSWORD")
+
+
+@patch("backend.data_layer.graphdb.get_env_variable")
+def test_get_neo4j_config_missing_env_variable(mock_get_env_variable):
+    with patch("backend.data_layer.graphdb.get_env_variable") as mock_get_env_variable:
+        mock_get_env_variable.side_effect = ValueError("Missing environment variable")
+        with pytest.raises(ValueError):
+            graphdb.get_neo4j_config()
 
 # Test get_neo4j_driver
 @patch("backend.data_layer.graphdb.GraphDatabase.driver")
@@ -31,7 +40,7 @@ def test_get_neo4j_driver(mock_get_neo4j_config, mock_driver):
     mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
     mock_driver.return_value = MagicMock()
 
-    driver = get_neo4j_driver()
+    driver = graphdb.get_neo4j_driver()
     assert driver is not None
     mock_get_neo4j_config.assert_called_once()
     mock_driver.assert_called_once_with(
@@ -45,7 +54,7 @@ def test_create_node(mock_logger):
     label = "Person"
     properties = {"name": "John Doe", "age": 30}
 
-    create_node(mock_tx, label, properties)
+    graphdb.create_node(mock_tx, label, properties)
 
     mock_tx.run.assert_called_once_with(
         "CREATE (n:Person $properties)", properties=properties
@@ -62,7 +71,7 @@ def test_create_relationship(mock_logger):
     end_node = 2
     relationship_type = "FRIENDS"
 
-    create_relationship(mock_tx, start_node, end_node, relationship_type)
+    graphdb.create_relationship(mock_tx, start_node, end_node, relationship_type)
 
     mock_tx.run.assert_called_once_with(
         "MATCH (a), (b) WHERE id(a) = $start_node AND id(b) = $end_node CREATE (a)-[r:FRIENDS]->(b)",
@@ -72,4 +81,3 @@ def test_create_relationship(mock_logger):
     mock_logger.info.assert_called_once_with(
         f"Relationship created from {start_node} to {end_node} with type {relationship_type}"
     )
-
