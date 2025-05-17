@@ -163,6 +163,27 @@ def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     # Verify that the collection is flushed
     mock_collection.return_value.flush.assert_called_once()
 
+@patch("backend.data_layer.vectorstore.Collection")
+@patch("backend.data_layer.vectorstore.connect_to_milvus")
+def test_insert_vectors_failure(mock_connect_to_milvus, mock_collection):
+    # Mock collection existence and instance
+    mock_collection.exists.return_value = True
+    collection_instance = MagicMock()
+    collection_instance.insert.side_effect = Exception("Insertion failed")
+    mock_collection.return_value = collection_instance
+
+    collection_name = "test_collection"
+    ids = [1, 2, 3]
+    embeddings = [[0.1] * 1024, [0.2] * 1024, [0.3] * 1024]
+
+    with pytest.raises(Exception, match="Insertion failed"):
+        vectorstore.insert_vectors(collection_name, ids, embeddings)
+
+    mock_connect_to_milvus.assert_called_once()
+    mock_collection.exists.assert_called_once_with(collection_name)
+    collection_instance.insert.assert_called_once_with([ids, embeddings])
+    collection_instance.flush.assert_called_once()
+
 # Test search_vectors
 @patch("backend.data_layer.vectorstore.Collection")
 @patch("backend.data_layer.vectorstore.connect_to_milvus")
@@ -187,3 +208,29 @@ def test_search_vectors(mock_connect_to_milvus, mock_collection):
         expr=None
     )
     assert results == "mock_results"
+
+@patch("backend.data_layer.vectorstore.Collection")
+@patch("backend.data_layer.vectorstore.connect_to_milvus")
+def test_search_vectors_failure(mock_connect_to_milvus, mock_collection):
+    # Mock collection instance and make search raise an exception
+    collection_instance = MagicMock()
+    collection_instance.search.side_effect = Exception("Search failed")
+    mock_collection.return_value = collection_instance
+
+    collection_name = "test_collection"
+    query_vectors = [[0.1] * 1024]
+    top_k = 5
+
+    with pytest.raises(Exception, match="Search failed"):
+        vectorstore.search_vectors(collection_name, query_vectors, top_k)
+
+    mock_connect_to_milvus.assert_called_once()
+    mock_collection.assert_called_once_with(collection_name)
+    collection_instance.search.assert_called_once_with(
+        data=query_vectors,
+        anns_field="embedding",
+        param={"metric_type": "COSINE", "params": {"nprobe": 10}},
+        limit=top_k,
+        expr=None
+    )
+
