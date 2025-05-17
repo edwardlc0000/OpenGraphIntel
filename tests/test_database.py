@@ -1,5 +1,4 @@
-
-# test_database.py
+# tests/test_database.py
 
 import pytest
 from unittest.mock import patch, MagicMock
