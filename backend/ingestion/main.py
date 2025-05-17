@@ -4,6 +4,10 @@
 import logging
 from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from contextlib import asynccontextmanager
+import os
 
 # Import custom modules
 from backend.data_layer.database import get_db
@@ -17,12 +21,11 @@ from backend.ingestion.service import (
 # Initialize the FastAPI router
 router = APIRouter()
 
-# Initialize FastAPI app
-app = FastAPI()
-app.include_router(router, prefix="/ingestion", tags=["ingestion"])
-
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Initialize the scheduler
+scheduler = BackgroundScheduler()
 
 @router.post("/load/sdn_data")
 def load_sdn_data(
@@ -68,3 +71,29 @@ def load_sdn_data(
     except Exception as e:
         logger.exception("An unexpected error occurred.")
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Skip startup logic during tests
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        logger.info("Application startup: Triggering SDN data load.")
+        try:
+            db = next(get_db())
+            load_sdn_data(db=db)
+            scheduler.add_job(
+                func=lambda: load_sdn_data(db=next(get_db())),
+                trigger=CronTrigger(hour=0, minute=0),
+                id="daily_sdn_data_load",
+                replace_existing=True
+            )
+            scheduler.start()
+        except Exception as e:
+            logger.error(f"Failed to initialize SDN data load: {e}")
+    yield
+    logger.info("Shutting down scheduler.")
+    if scheduler.running:
+        scheduler.shutdown()
+
+# Initialize FastAPI app
+app = FastAPI(lifespan=lifespan)
+app.include_router(router, prefix="/ingestion", tags=["ingestion"])
