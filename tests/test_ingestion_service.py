@@ -103,6 +103,87 @@ SAMPLE_XML = """<?xml version="1.0"?>
 </sdnList>
 """
 
+SAMPLE_XML_NO_VESSEL = """<?xml version="1.0"?>
+<sdnList xmlns="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML">
+    <publshInformation>
+        <Publish_Date>2025-05-11</Publish_Date>
+        <Record_Count>1</Record_Count>
+    </publshInformation>
+    <sdnEntry>
+        <uid>123</uid>
+        <firstName>John</firstName>
+        <lastName>Doe</lastName>
+        <title>Mr.</title>
+        <sdnType>Individual</sdnType>
+        <remarks>Test remarks</remarks>
+        <programList>
+            <program>Program1</program>
+        </programList>
+        <akaList>
+            <aka>
+                <uid>1</uid>
+                <type>Alias</type>
+                <category>Primary</category>
+                <lastName>Doe</lastName>
+                <firstName>John</firstName>
+            </aka>
+        </akaList>
+        <idList>
+            <id>
+                <uid>1</uid>
+                <idType>Passport</idType>
+                <idNumber>123456789</idNumber>
+                <idCountry>US</idCountry>
+                <issueDate>2020-01-01</issueDate>
+                <expirationDate>2030-01-01</expirationDate>
+            </id>
+        </idList>
+        <nationalityList>
+            <nationality>
+                <uid>1</uid>
+                <country>US</country>
+                <mainEntry>true</mainEntry>
+            </nationality>
+        </nationalityList>
+        <citizenshipList>
+            <citizenship>
+                <uid>1</uid>
+                <country>US</country>
+                <mainEntry>true</mainEntry>
+            </citizenship>
+        </citizenshipList>
+        <dateOfBirthList>
+            <dateOfBirthItem>
+                <uid>1</uid>
+                <dateOfBirth>1980-01-01</dateOfBirth>
+                <mainEntry>true</mainEntry>
+            </dateOfBirthItem>
+        </dateOfBirthList>
+        <placeOfBirthList>
+            <placeOfBirthItem>
+                <uid>1</uid>
+                <placeOfBirth>New York</placeOfBirth>
+                <mainEntry>true</mainEntry>
+            </placeOfBirthItem>
+        </placeOfBirthList>
+        <addressList>
+            <address>
+                <uid>1</uid>
+                <address1>123 Main St</address1>
+                <address2>Apt 4B</address2>
+                <address3></address3>
+                <city>New York</city>
+                <stateOrProvince>NY</stateOrProvince>
+                <postalCode>10001</postalCode>
+                <country>USA</country>
+                <region>North America</region>
+            </address>
+        </addressList>
+        <!-- vesselInfo omitted -->
+    </sdnEntry>
+</sdnList>
+"""
+
 SAMPLE_XSD = """<?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML" targetNamespace="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML" elementFormDefault="qualified">
     <xs:element name="sdnList">
@@ -297,12 +378,29 @@ def test_validate_sdn_xml(mock_open_file):
     ]
     assert validate_sdn_xml("sdn_advanced.xml", "sdn_advanced.xsd") is True
 
+def test_validate_sdn_xml_invalid(mock_open_file):
+    # Invalid XML that doesn't match the XSD
+    invalid_xml = "<root></root>"
+    mock_open_file.side_effect = [
+        mock_open(read_data=SAMPLE_XSD).return_value,
+        mock_open(read_data=invalid_xml).return_value
+    ]
+    assert validate_sdn_xml("sdn_advanced.xml", "sdn_advanced.xsd") is False
+
 def test_parse_sdn_xml():
     # Pass io.StringIO directly to parse_sdn_xml
     result = parse_sdn_xml(io.StringIO(SAMPLE_XML))
     assert len(result) == 1
     assert result[0]["uid"] == "123"
     assert result[0]["first_name"] == "John"
+
+def parse_sdn_xml_no_vessel():
+    # Pass io.StringIO directly to parse_sdn_xml
+    result = parse_sdn_xml(io.StringIO(SAMPLE_XML_NO_VESSEL))
+    assert len(result) == 1
+    assert result[0]["uid"] == "123"
+    assert result[0]["first_name"] == "John"
+    assert "vessel_info" not in result[0]
 
 def test_store_sdn_data(mock_db_session):
     # Configure the mock to simulate no existing entity
@@ -315,4 +413,43 @@ def test_store_sdn_data(mock_db_session):
 
     # Assert that the add and commit methods were called
     assert mock_db_session.add.called
+    assert mock_db_session.commit.called
+
+def test_store_sdn_data_no_vessel(mock_db_session):
+    # Configure the mock to simulate no existing entity
+    mock_query = mock_db_session.query.return_value
+    mock_query.filter.return_value.first.return_value = None
+
+    # Pass io.StringIO directly to parse_sdn_xml
+    sdn_data = parse_sdn_xml(io.StringIO(SAMPLE_XML_NO_VESSEL))
+    store_sdn_data(sdn_data, mock_db_session)
+
+    # Assert that the add and commit methods were called
+    assert mock_db_session.add.called
+    assert mock_db_session.commit.called
+
+def test_store_sdn_data_skips_existing(mock_db_session):
+    # Simulate an existing entity
+    mock_query = mock_db_session.query.return_value
+    mock_query.filter.return_value.first.return_value = True
+
+    sdn_data = [{
+        "uid": "123",
+        "first_name": "John",
+        "last_name": "Doe",
+        "sdn_type": "Individual",
+        "remarks": "Test remarks",
+        "programs": [],
+        "aka_list": [],
+        "ids": [],
+        "nationalities": [],
+        "citizenships": [],
+        "date_of_birth_list": [],
+        "place_of_birth_list": [],
+        "address_list": [],
+        "vessel_info": {}
+    }]
+    store_sdn_data(sdn_data, mock_db_session)
+    # Should not call add, but should still call commit
+    assert not mock_db_session.add.called
     assert mock_db_session.commit.called
