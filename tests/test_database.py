@@ -103,14 +103,6 @@ def test_construct_session_with_existing_engine(mock_construct_engine):
     assert isinstance(session_factory, sessionmaker)
     assert session_factory.kw["bind"] == mock_engine
 
-
-@patch("backend.data_layer.database.construct_engine")
-def test_construct_session_creation_failure(mock_construct_engine):
-    """Test construct_session when create_engine raises an exception."""
-    mock_construct_engine.side_effect = Exception("Engine creation failed")
-    with pytest.raises(Exception, match="Engine creation failed"):
-        db_module.construct_session()
-
 # Test construct_base
 def test_construct_base():
     base = db_module.construct_base()

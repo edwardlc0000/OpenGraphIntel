@@ -81,13 +81,9 @@ def construct_session(engine: Engine = None) -> Session:
         logger.info("Creating a new session factory.")
         if engine is None:
             engine = construct_engine()
-        try:
-            _session_factory = sessionmaker(autocommit=False,
-                                            autoflush=False,
-                                            bind=engine)
-        except Exception as e:
-            logger.error(f"Error creating session factory: {e}")
-            raise
+        _session_factory = sessionmaker(autocommit=False,
+                                        autoflush=False,
+                                        bind=engine)
     return _session_factory
 
 
