@@ -86,6 +86,31 @@ def test_construct_session(mock_construct_engine):
     assert isinstance(session_factory, sessionmaker)
     assert session_factory.kw["bind"] == mock_engine
 
+@patch("backend.data_layer.database.construct_engine")
+def test_construct_session_with_existing_factory(mock_construct_engine):
+    mock_engine = MagicMock(spec=Engine)
+    mock_construct_engine.return_value = mock_engine
+    session_factory1 = db_module.construct_session()
+    session_factory2 = db_module.construct_session()
+    assert session_factory1 == session_factory2
+
+
+@patch("backend.data_layer.database.construct_engine")
+def test_construct_session_with_existing_engine(mock_construct_engine):
+    mock_engine = MagicMock(spec=Engine)
+    mock_construct_engine.return_value = mock_engine
+    session_factory = db_module.construct_session(engine=mock_engine)
+    assert isinstance(session_factory, sessionmaker)
+    assert session_factory.kw["bind"] == mock_engine
+
+
+@patch("backend.data_layer.database.construct_engine")
+def test_construct_session_creation_failure(mock_construct_engine):
+    """Test construct_session when create_engine raises an exception."""
+    mock_construct_engine.side_effect = Exception("Engine creation failed")
+    with pytest.raises(Exception, match="Engine creation failed"):
+        db_module.construct_session()
+
 # Test construct_base
 def test_construct_base():
     base = db_module.construct_base()
@@ -105,4 +130,20 @@ def test_get_db(mock_construct_session):
     # Ensure the session is closed after the generator is exhausted
     with pytest.raises(StopIteration):
         next(generator)
+    mock_session.close.assert_called_once()
+
+@patch("backend.data_layer.database.construct_session")
+def test_get_db_close_on_exception(mock_construct_session):
+    mock_session = MagicMock()
+    mock_construct_session.return_value = MagicMock(return_value=mock_session)
+
+    generator = db_module.get_db()
+    db = next(generator)
+    assert db == mock_session
+
+    # Simulate exception after yielding
+    try:
+        generator.throw(Exception("Test exception"))
+    except Exception:
+        pass
     mock_session.close.assert_called_once()
