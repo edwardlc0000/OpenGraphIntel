@@ -39,7 +39,6 @@
     <Compile Include="backend\graph\service.py" />
     <Compile Include="backend\graph\__init__.py" />
     <Compile Include="backend\ingestion\main.py" />
-    <Compile Include="backend\ingestion\model.py" />
     <Compile Include="backend\ingestion\service.py" />
     <Compile Include="backend\ingestion\__init__.py" />
     <Compile Include="backend\llm_query\main.py" />
@@ -50,6 +49,10 @@
     <Compile Include="backend\matcher\model.py" />
     <Compile Include="backend\matcher\service.py" />
     <Compile Include="backend\matcher\__init__.py" />
+    <Compile Include="backend\models\SDNEntity.py" />
+    <Compile Include="backend\models\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="backend\nlp_enrichment\main.py" />
     <Compile Include="backend\nlp_enrichment\model.py" />
     <Compile Include="backend\nlp_enrichment\service.py" />
@@ -83,13 +86,12 @@
     <Folder Include="backend\common\" />
     <Folder Include="backend\common\__pycache__\" />
     <Folder Include="backend\data_layer\" />
-    <Folder Include="backend\data_layer\__pycache__\" />
     <Folder Include="backend\gateway\" />
     <Folder Include="backend\graph\" />
     <Folder Include="backend\ingestion\" />
-    <Folder Include="backend\ingestion\__pycache__\" />
     <Folder Include="backend\llm_query\" />
     <Folder Include="backend\matcher\" />
+    <Folder Include="backend\models\" />
     <Folder Include="backend\nlp_enrichment\" />
     <Folder Include="frontend\" />
     <Folder Include="tests\" />
@@ -99,18 +101,8 @@
     <Content Include=".github\workflows\test.yml" />
     <Content Include="backend\common\__pycache__\utils.cpython-313.pyc" />
     <Content Include="backend\common\__pycache__\__init__.cpython-313.pyc" />
-    <Content Include="backend\data_layer\__pycache__\database.cpython-313.pyc" />
-    <Content Include="backend\data_layer\__pycache__\db.cpython-313.pyc" />
-    <Content Include="backend\data_layer\__pycache__\graphdb.cpython-313.pyc" />
-    <Content Include="backend\data_layer\__pycache__\objectstore_aws.cpython-313.pyc" />
-    <Content Include="backend\data_layer\__pycache__\vectorstore.cpython-313.pyc" />
-    <Content Include="backend\data_layer\__pycache__\__init__.cpython-313.pyc" />
     <Content Include="backend\ingestion\Dockerfile" />
     <Content Include="backend\ingestion\ingestion-requirements.txt" />
-    <Content Include="backend\ingestion\__pycache__\main.cpython-313.pyc" />
-    <Content Include="backend\ingestion\__pycache__\model.cpython-313.pyc" />
-    <Content Include="backend\ingestion\__pycache__\service.cpython-313.pyc" />
-    <Content Include="backend\ingestion\__pycache__\__init__.cpython-313.pyc" />
     <Content Include="backend\llm_query\Dockerfile" />
     <Content Include="backend\matcher\Dockerfile" />
     <Content Include="backend\nlp_enrichment\Dockerfile" />

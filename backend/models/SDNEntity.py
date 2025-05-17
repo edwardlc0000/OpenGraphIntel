@@ -1,4 +1,4 @@
-# backend/ingestion/model.py
+# backend/ingestion/SDNEntity.py
 
 # Import dependencies
 import logging

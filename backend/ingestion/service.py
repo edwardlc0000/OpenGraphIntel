@@ -7,7 +7,7 @@ from lxml import etree
 from sqlalchemy.orm import Session
 
 # Import custom modules
-from backend.ingestion.model import (
+from backend.models.SDNEntity import (
     SDNEntity,
     Address,
     Program,
@@ -17,8 +17,7 @@ from backend.ingestion.model import (
     AKA,
     DateOfBirth,
     PlaceOfBirth,
-    Citizenship,
-    PublishInformation
+    Citizenship
 )
 
 

@@ -4,8 +4,6 @@
 import logging
 from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from starlette.routing import Router
-
 
 # Import custom modules
 from backend.data_layer.database import get_db
@@ -14,20 +12,6 @@ from backend.ingestion.service import (
     validate_sdn_xml,
     parse_sdn_xml,
     store_sdn_data
-)
-
-from backend.ingestion.model import (
-    SDNEntity,
-    Address,
-    Program,
-    Nationality,
-    Vessel,
-    ID,
-    AKA,
-    DateOfBirth,
-    PlaceOfBirth,
-    Citizenship,
-    PublishInformation
 )
 
 # Initialize the FastAPI router
