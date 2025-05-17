@@ -106,6 +106,7 @@
     <Content Include="backend\llm_query\Dockerfile" />
     <Content Include="backend\matcher\Dockerfile" />
     <Content Include="backend\nlp_enrichment\Dockerfile" />
+    <Content Include="coverage.xml" />
     <Content Include="docker-compose.yml" />
     <Content Include="LICENSE.txt" />
     <Content Include="README.md" />
