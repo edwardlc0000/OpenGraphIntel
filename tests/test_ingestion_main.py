@@ -60,6 +60,22 @@ def test_lifespan_startup_logic(mocker, monkeypatch):
     with TestClient(app):
         pass  # Just starting and stopping the app triggers lifespan
 
+def test_lifespan_startup_exception(monkeypatch, mocker):
+    # Unset PYTEST_CURRENT_TEST to trigger startup logic
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    # Patch get_db to raise an exception
+    mocker.patch("backend.ingestion.main.get_db", side_effect=Exception("DB error"))
+    # Patch scheduler methods to avoid side effects
+    mocker.patch("backend.ingestion.main.scheduler.start", return_value=None)
+    mocker.patch("backend.ingestion.main.scheduler.add_job", return_value=None)
+    # Patch logger to check error logging
+    log_mock = mocker.patch("backend.ingestion.main.logger.error")
+    from backend.ingestion.main import app
+    with TestClient(app):
+        pass
+    log_mock.assert_any_call("Failed to initialize SDN data load: DB error")
+
+
 def test_lifespan_shutdown_scheduler(monkeypatch, mocker):
     # Unset PYTEST_CURRENT_TEST to trigger shutdown logic
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
