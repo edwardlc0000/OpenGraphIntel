@@ -378,6 +378,13 @@ def test_validate_sdn_xml(mock_open_file):
     ]
     assert validate_sdn_xml("sdn_advanced.xml", "sdn_advanced.xsd") is True
 
+def test_validate_sdn_xml_no_vessel(mock_open_file):
+    mock_open_file.side_effect = [
+        mock_open(read_data=SAMPLE_XSD).return_value,
+        mock_open(read_data=SAMPLE_XML_NO_VESSEL).return_value
+    ]
+    assert validate_sdn_xml("sdn_advanced.xml", "sdn_advanced.xsd") is True
+
 def test_validate_sdn_xml_invalid(mock_open_file):
     # Invalid XML that doesn't match the XSD
     invalid_xml = "<root></root>"
@@ -394,13 +401,13 @@ def test_parse_sdn_xml():
     assert result[0]["uid"] == "123"
     assert result[0]["first_name"] == "John"
 
-def parse_sdn_xml_no_vessel():
+def test_parse_sdn_xml_no_vessel():
     # Pass io.StringIO directly to parse_sdn_xml
     result = parse_sdn_xml(io.StringIO(SAMPLE_XML_NO_VESSEL))
     assert len(result) == 1
     assert result[0]["uid"] == "123"
     assert result[0]["first_name"] == "John"
-    assert "vessel_info" not in result[0]
+    assert result[0]["vessel_info"] == {}
 
 def test_store_sdn_data(mock_db_session):
     # Configure the mock to simulate no existing entity
