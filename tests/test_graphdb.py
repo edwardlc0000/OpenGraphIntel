@@ -47,6 +47,18 @@ def test_get_neo4j_driver(mock_get_neo4j_config, mock_driver):
         "bolt://localhost:7687", auth=("neo4j", "password")
     )
 
+@patch("backend.data_layer.graphdb.GraphDatabase.driver")
+@patch("backend.data_layer.graphdb.get_neo4j_config")
+@patch("backend.data_layer.graphdb.logger")
+def test_get_neo4j_driver_failure(mock_logger, mock_get_neo4j_config, mock_driver):
+    mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
+    mock_driver.side_effect = Exception("Connection failed")
+
+    with pytest.raises(RuntimeError, match="Failed to create Neo4j driver."):
+        graphdb.get_neo4j_driver()
+    mock_logger.error.assert_called_once()
+    assert "Failed to create Neo4j driver" in mock_logger.error.call_args[0][0]
+
 # Test create_node
 @patch("backend.data_layer.graphdb.logger")
 def test_create_node(mock_logger):
@@ -62,6 +74,19 @@ def test_create_node(mock_logger):
     mock_logger.info.assert_called_once_with(
         f"Node created with label {label} and properties {properties}"
     )
+
+@patch("backend.data_layer.graphdb.logger")
+def test_create_node_failure(mock_logger):
+    mock_tx = MagicMock()
+    mock_tx.run.side_effect = Exception("Query failed")
+    label = "Person"
+    properties = {"name": "John Doe", "age": 30}
+
+    with pytest.raises(Exception, match="Query failed"):
+        graphdb.create_node(mock_tx, label, properties)
+    mock_logger.error.assert_called_once()
+    assert "Error creating node" in mock_logger.error.call_args[0][0]
+    mock_tx.close.assert_called_once()
 
 # Test create_relationship
 @patch("backend.data_layer.graphdb.logger")
@@ -81,3 +106,17 @@ def test_create_relationship(mock_logger):
     mock_logger.info.assert_called_once_with(
         f"Relationship created from {start_node} to {end_node} with type {relationship_type}"
     )
+
+@patch("backend.data_layer.graphdb.logger")
+def test_create_relationship_failure(mock_logger):
+    mock_tx = MagicMock()
+    mock_tx.run.side_effect = Exception("Relationship query failed")
+    start_node = 1
+    end_node = 2
+    relationship_type = "FRIENDS"
+
+    with pytest.raises(Exception, match="Relationship query failed"):
+        graphdb.create_relationship(mock_tx, start_node, end_node, relationship_type)
+    mock_logger.error.assert_called_once()
+    assert "Error creating relationship" in mock_logger.error.call_args[0][0]
+    mock_tx.close.assert_called_once()
