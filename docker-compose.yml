@@ -84,6 +84,32 @@ services:
     volumes:
       - minio_data:/data
 
+  minio-files:
+    image: minio/minio:latest
+    container_name: minio-files
+    command: server /data --console-address ":${MINIO_FILES_CONSOLE_PORT}"
+    ports:
+      - "${MINIO_FILES_PORT}:${MINIO_FILES_PORT}"
+      - "${MINIO_FILES_CONSOLE_PORT}:${MINIO_FILES_CONSOLE_PORT}"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_FILES_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_FILES_ROOT_PASSWORD}
+    volumes:
+      - minio_files_data:/data
+    profiles: ["aws", "default"]
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    restart: always
+    ports:
+      - "${AZURITE_BLOB_PORT}:10000"
+      - "${AZURITE_QUEUE_PORT}:10001"
+      - "${AZURITE_TABLE_PORT}:10002"
+    volumes:
+      - azurite_data:/data
+    profiles: ["azure"]
+
   attu:
     image: zilliz/attu:latest
     container_name: attu
@@ -126,4 +152,6 @@ volumes:
   neo4jdata:
   milvus_data:
   etcd_data:
-  minio_data:    
+  minio_data:
+  minio_files_data:
+  azurite_data:

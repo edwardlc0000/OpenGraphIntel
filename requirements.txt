@@ -15,6 +15,9 @@ pydantic-settings
 rapidfuzz
 unicode
 
+# BLOB storage
+minio
+
 # Vector store and embeddings
 pymilvus
 numpy

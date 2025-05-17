@@ -52,6 +52,7 @@
     <Compile Include="backend\nlp_enrichment\model.py" />
     <Compile Include="backend\nlp_enrichment\service.py" />
     <Compile Include="backend\nlp_enrichment\__init__.py" />
+    <Compile Include="backend\data_layer\objectstore.py" />
     <Compile Include="backend\__init__.py" />
     <Compile Include="tests\sentence_transformer_benchmark.py" />
     <Compile Include="tests\test_database.py" />
