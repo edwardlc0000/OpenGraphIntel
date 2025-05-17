@@ -2,6 +2,7 @@
 fastapi
 uvicorn
 httpx
+apscheduler
 
 # ORM and PostgreSQL
 sqlalchemy
@@ -37,6 +38,8 @@ asyncpg
 # Testing
 pytest
 pytest-cov
+pytest-asyncio
+pytest-mock
 
 # Utilities
 python-dotenv
