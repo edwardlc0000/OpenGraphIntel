@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 # Initialize the base class for SQLAlchemy models
 Base = construct_base()
 
-
 class SDNEntity(Base):
     """
     SQLAlchemy model for storing SDN data.
