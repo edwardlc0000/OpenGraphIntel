@@ -98,7 +98,7 @@ def construct_base() -> DeclarativeBase:
     if _base is None:
         logger.info("Creating a new declarative base.")
         _base = declarative_base()
-    return declarative_base()
+    return _base
 
 
 # Dependency injection for the database session
@@ -112,3 +112,14 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+def init_db() -> None:
+    """
+    Initializes the database by creating the tables.
+    """
+    logger.info("Initializing the database.")
+    engine = construct_engine()
+    base = construct_base()    
+    from backend.models.SDNEntity import SDNEntity
+    base.metadata.create_all(bind=engine)
+    logger.info("Database initialized successfully.")
