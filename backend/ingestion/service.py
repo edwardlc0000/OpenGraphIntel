@@ -32,14 +32,22 @@ def download_sdn_files(xml_url: str, xsd_url: str) -> tuple[str, str]:
     """
     xml_path = "sdn_advanced.xml"
     xsd_path = "sdn_advanced.xsd"
-    # Download XML file
-    response = requests.get(xml_url)
-    with open(xml_path, "wb") as xml_file:
-        xml_file.write(response.content)
-    # Download XSD file
-    response = requests.get(xsd_url)
-    with open(xsd_path, "wb") as xsd_file:
-        xsd_file.write(response.content)
+    try:
+        # Download XML file
+        response = requests.get(xml_url)
+        response.raise_for_status()
+        with open(xml_path, "wb") as xml_file:
+            xml_file.write(response.content)
+        
+        # Download XSD file
+        response = requests.get(xsd_url)
+        response.raise_for_status()
+        with open(xsd_path, "wb") as xsd_file:
+            xsd_file.write(response.content)
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to download files: {e}")
+        raise
     return xml_path, xsd_path
 
 

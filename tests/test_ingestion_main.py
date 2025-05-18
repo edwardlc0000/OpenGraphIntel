@@ -53,6 +53,7 @@ def test_lifespan_startup_logic(mocker, monkeypatch):
     # Unset PYTEST_CURRENT_TEST to trigger startup logic
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     # Mock all side effects in startup logic
+    mocker.patch("backend.ingestion.main.init_db", return_value=None)
     mocker.patch("backend.ingestion.main.get_db", return_value=iter([object()]))
     mocker.patch("backend.ingestion.main.load_sdn_data", return_value=None)
     mocker.patch("backend.ingestion.main.scheduler.start", return_value=None)
@@ -66,6 +67,7 @@ def test_lifespan_startup_exception(monkeypatch, mocker):
     # Patch get_db to raise an exception
     mocker.patch("backend.ingestion.main.get_db", side_effect=Exception("DB error"))
     # Patch scheduler methods to avoid side effects
+    mocker.patch("backend.ingestion.main.init_db", return_value=None)
     mocker.patch("backend.ingestion.main.scheduler.start", return_value=None)
     mocker.patch("backend.ingestion.main.scheduler.add_job", return_value=None)
     # Patch logger to check error logging
@@ -87,6 +89,7 @@ def test_lifespan_shutdown_scheduler(monkeypatch, mocker):
     )
     mocker.patch("backend.ingestion.main.scheduler.shutdown", return_value=None)
     # Patch startup logic to do nothing
+    mocker.patch("backend.ingestion.main.init_db", return_value=None)
     mocker.patch("backend.ingestion.main.get_db", return_value=iter([object()]))
     mocker.patch("backend.ingestion.main.load_sdn_data", return_value=None)
     mocker.patch("backend.ingestion.main.scheduler.start", return_value=None)
