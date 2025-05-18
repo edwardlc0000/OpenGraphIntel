@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 import os
 
 # Import custom modules
-from backend.data_layer.database import get_db
+from backend.data_layer.database import get_db, init_db
 from backend.ingestion.service import (
     download_sdn_files,
     validate_sdn_xml,
@@ -74,9 +74,20 @@ def load_sdn_data(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Lifespan event handler for the FastAPI application.
+    This function initializes the database and scheduler, and loads SDN data at startup.
+    It also handles the shutdown of the scheduler at the end of the application lifecycle.
+    Args:
+        app (FastAPI): The FastAPI application instance.
+    Yields:
+        None: This function does not yield any value.
+    """
     # Skip startup logic during tests
     if "PYTEST_CURRENT_TEST" not in os.environ:
         logger.info("Application startup: Triggering SDN data load.")
+        # Initialize the database and create tables
+        init_db()
         try:
             db = next(get_db())
             load_sdn_data(db=db)

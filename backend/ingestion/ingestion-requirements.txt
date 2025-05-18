@@ -2,6 +2,7 @@
 fastapi
 uvicorn
 httpx
+apscheduler
 
 # ORM and PostgreSQL
 SQLAlchemy
