@@ -99,7 +99,7 @@ def detect_k8s_provider() -> str:
             return "gcp-gke"
         else:
             logging.error("Unsupported Kubernetes provider detected.")
-            return "unknown-k8s"
+            raise RuntimeError("Unsupported Kubernetes provider detected.")
 
     except Exception as e:
         logging.error(f"Error detecting Kubernetes provider: {e}")
