@@ -110,6 +110,18 @@ services:
       - azurite_data:/data
     profiles: ["azure"]
 
+  azurite-files:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite-files
+    restart: always
+    ports:
+      - "${AZURITE_FILES_BLOB_PORT}:10000"
+      - "${AZURITE_FILES_QUEUE_PORT}:10001"
+      - "${AZURITE_FILES_TABLE_PORT}:10002"
+    volumes:
+      - azurite_files_data:/data
+    profiles: ["azure"]
+
   attu:
     image: zilliz/attu:latest
     container_name: attu
@@ -180,4 +192,5 @@ volumes:
   minio_data:
   minio_files_data:
   azurite_data:
+  azurite_files_data:
   grafana_data:
