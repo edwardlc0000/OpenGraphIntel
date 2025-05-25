@@ -19,6 +19,8 @@ unicode
 # BLOB storage
 minio
 azure-storage-blob
+google-cloud-storage
+google-auth
 
 # Vector store and embeddings
 pymilvus

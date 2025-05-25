@@ -1,4 +1,3 @@
-
 # backend/data_layer/objectstore_azure.py
 
 import logging

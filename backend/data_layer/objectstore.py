@@ -24,7 +24,7 @@ try:
     elif "azure" in cloud_env:
         import backend.data_layer.objectstore_azure
     elif "gcp" in cloud_env:
-        logger.error("GCP support is not implemented yet.")
+        import backend.data_layer.objectstore_gcp
     elif "unknown" in cloud_env:
         logger.error("Unknown cloud environment. Please check your configuration.")
         raise RuntimeError("Unknown cloud environment. Please check your configuration.")
