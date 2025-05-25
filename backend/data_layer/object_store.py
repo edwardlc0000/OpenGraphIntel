@@ -17,33 +17,40 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-def get_objectstore_module() -> str:
-    """
-    This function dynamically imports the appropriate object store module based on the cloud environment.
-    It checks for an environment variable override and defaults to using the detected environment.
-    """
-    if os.getenv("CLOUD_ENV_OVERRIDE") is not None:
-        return os.getenv("CLOUD_ENV_OVERRIDE").lower()
-    else:
-        return detect_env().lower()
+_object_store_instance = None
 
-def get_objectstore() -> None:
+class ObjectStore:
     """
-    This function returns the object store module based on the cloud environment.
-    It raises an error if the cloud environment is unknown.
+
     """
-    cloud_env = get_objectstore_module()
+    @staticmethod
+    def get_object_store() -> object:
+        """
+        This function dynamically imports the appropriate object store module based on the cloud environment.
+        It checks for an environment variable override and defaults to using the detected environment.
+        """
+        global _object_store_instance
+        if _object_store_instance is None:
+            if os.getenv("CLOUD_ENV_OVERRIDE") is not None:
+                cloud_env = os.getenv("CLOUD_ENV_OVERRIDE")
+            else:
+                cloud_env = detect_env().lower()
+            logger.info(f"Detected cloud environment: {cloud_env}")
 
-    # Log the detected cloud environment
-    logger.info(f"Detected cloud environment: {cloud_env}")
+            if "aws" in cloud_env:
+                module_name = "backend.data_layer.object_store_aws"
+                class_name = "ObjectStoreAWS"
+            elif "azure" in cloud_env:
+                module_name = "backend.data_layer.object_store_azure"
+                class_name = "ObjectStoreAzure"
+            elif "gcp" in cloud_env:
+                module_name = "backend.data_layer.object_store_gcp"
+                class_name = "ObjectStoreGCP"
+            else:
+                raise RuntimeError(f"Unsupported cloud environment: {cloud_env}")
 
-    # Dynamically import the appropriate object store module
-    if "aws" in cloud_env:
-        objectstore = importlib.import_module('backend.data_layer.objectstore_aws')
-    elif "azure" in cloud_env:
-        objectstore = importlib.import_module('backend.data_layer.objectstore_azure')
-    elif "gcp" in cloud_env:
-        objectstore = importlib.import_module('backend.data_layer.objectstore_gcp')
-    elif "unknown" in cloud_env:
-        logger.error("Unknown cloud environment. Please check your configuration.")
-        raise RuntimeError("Unknown cloud environment. Please check your configuration.")
+            logger.info(f"Importing module {module_name}.{class_name}")
+            module = importlib.import_module(module_name)
+            object_store_class = getattr(module, class_name)
+            _object_store_instance = object_store_class()
+        return _object_store_instance
