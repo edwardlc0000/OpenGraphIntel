@@ -2,99 +2,140 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-import backend.data_layer.object_store_aws as object_store
+from backend.data_layer.object_store_aws import ObjectStoreAWS, S3Error
 
-@pytest.fixture(autouse=True)
-def reset_minio_client():
-    # Reset the singleton before each test
-    object_store._minio_client = None
+@pytest.fixture
+def mock_env_variables():
+    env_vars = {
+        'MINIO_FILES_HOST': 'localhost',
+        'MINIO_FILES_PORT': '9000',
+        'MINIO_FILES_ROOT_USER': 'user',
+        'MINIO_FILES_ROOT_PASSWORD': 'pass'
+    }
+    with patch('backend.data_layer.object_store_aws.get_env_variable') as mock_env:
+        mock_env.side_effect = lambda key: env_vars[key]
+        yield
 
 def test_get_minio_config_success():
     with patch('backend.data_layer.object_store_aws.get_env_variable') as mock_env:
-        mock_env.side_effect = lambda key, default=None: {
+        mock_env.side_effect = lambda key: {
             'MINIO_FILES_HOST': 'localhost',
             'MINIO_FILES_PORT': '9000',
             'MINIO_FILES_ROOT_USER': 'user',
             'MINIO_FILES_ROOT_PASSWORD': 'pass'
         }[key]
-        endpoint, access_key, secret_key, secure = object_store.get_minio_config()
-        assert endpoint == 'localhost:9000'
-        assert access_key == 'user'
-        assert secret_key == 'pass'
-        assert secure is False
+        store = ObjectStoreAWS()
+        assert store.endpoint == 'localhost:9000'
+        assert store.access_key == 'user'
+        assert store.secret_key == 'pass'
+        assert store.secure is False
 
 def test_get_minio_config_failure():
     with patch('backend.data_layer.object_store_aws.get_env_variable', side_effect=Exception("env error")):
         with pytest.raises(Exception):
-            object_store.get_minio_config()
+            ObjectStoreAWS()
 
-def test_get_minio_client_singleton():
-    with patch('backend.data_layer.object_store_aws.get_minio_config') as mock_conf, \
+def test_minio_client_singleton(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.ObjectStoreAWS._get_minio_config', return_value=('host:9000', 'user', 'pass', False)), \
          patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
-        mock_conf.return_value = ('host:9000', 'user', 'pass', False)
         client_instance = MagicMock()
         mock_minio.return_value = client_instance
-        client1 = object_store.get_minio_client()
-        client2 = object_store.get_minio_client()
+        store1 = ObjectStoreAWS()
+        client1 = store1.client
+        store2 = ObjectStoreAWS()
+        client2 = store2.client
         assert client1 is client2
-        mock_minio.assert_called_once()
 
-def test_ensure_bucket_exists():
-    mock_client = MagicMock()
-    mock_client.bucket_exists.return_value = True
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client):
-        object_store.ensure_bucket('testbucket')
+
+def test_ensure_bucket_exists(mock_env_variables):
+    # Specific mock for Minio client
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_client.bucket_exists.return_value = True
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        store.ensure_bucket('testbucket')
         mock_client.bucket_exists.assert_called_with('testbucket')
         mock_client.make_bucket.assert_not_called()
 
-def test_ensure_bucket_not_exists():
-    mock_client = MagicMock()
-    mock_client.bucket_exists.return_value = False
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client):
-        object_store.ensure_bucket('testbucket')
+def test_ensure_bucket_not_exists(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_client.bucket_exists.return_value = False
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        store.ensure_bucket('testbucket')
         mock_client.make_bucket.assert_called_with('testbucket')
 
-def test_upload_file_success():
-    mock_client = MagicMock()
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client), \
-         patch('backend.data_layer.object_store_aws.ensure_bucket'):
-        object_store.upload_file('bucket', 'obj', '/tmp/file')
+def test_upload_file_success(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        # Configure the mock Minio client
+        mock_client = MagicMock()
+        mock_minio.return_value = mock_client
+
+        # Prepare store instance after patching
+        store = ObjectStoreAWS()
+
+        # Call the method under test
+        store.upload_file('bucket', 'obj', '/tmp/file')
+
+        # Assert interactions with the mock client
+        mock_client.fput_object.assert_called_with('bucket', 'obj', '/tmp/file')
+        mock_client.bucket_exists.assert_called_with('bucket')
+
+def test_upload_file_failure(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_minio.return_value = mock_client
+
+        # Set up the client to raise an error on fput_object call
+        mock_client.fput_object.side_effect = S3Error("err", "msg", "req", "host", "id", "res")
+
+        # Prepare store instance after patching
+        store = ObjectStoreAWS()
+
+        # Execute the upload and expect an S3Error
+        with pytest.raises(S3Error):
+            store.upload_file('bucket', 'obj', '/tmp/file')
+
+        # Ensure the function attempted the call, causing the side effect
         mock_client.fput_object.assert_called_with('bucket', 'obj', '/tmp/file')
 
-def test_upload_file_failure():
-    mock_client = MagicMock()
-    mock_client.fput_object.side_effect = object_store.S3Error("err", "msg", "req", "host", "id", "res")
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client), \
-         patch('backend.data_layer.object_store_aws.ensure_bucket'):
-        with pytest.raises(object_store.S3Error):
-            object_store.upload_file('bucket', 'obj', '/tmp/file')
-
-def test_download_file_success():
-    mock_client = MagicMock()
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client):
-        object_store.download_file('bucket', 'obj', '/tmp/file')
+def test_download_file_success(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_client.fget_object.return_value = None
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        store.download_file('bucket', 'obj', '/tmp/file')
         mock_client.fget_object.assert_called_with('bucket', 'obj', '/tmp/file')
 
-def test_download_file_failure():
-    mock_client = MagicMock()
-    mock_client.fget_object.side_effect = object_store.S3Error("err", "msg", "req", "host", "id", "res")
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client):
-        with pytest.raises(object_store.S3Error):
-            object_store.download_file('bucket', 'obj', '/tmp/file')
+def test_download_file_failure(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_client.fget_object.side_effect = S3Error("err", "msg", "req", "host", "id", "res")
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        with pytest.raises(S3Error):
+            store.download_file('bucket', 'obj', '/tmp/file')
+        mock_client.fget_object.assert_called_with('bucket', 'obj', '/tmp/file')
 
-def test_list_files_success():
-    mock_client = MagicMock()
-    mock_obj = MagicMock()
-    mock_obj.object_name = 'file1.txt'
-    mock_client.list_objects.return_value = [mock_obj]
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client):
-        files = object_store.list_files('bucket')
-        assert files == ['file1.txt']
+def test_list_files_success(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_client.list_objects.return_value = [MagicMock(object_name='file1'), MagicMock(object_name='file2')]
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        files = store.list_files('bucket')
+        assert files == ['file1', 'file2']
         mock_client.list_objects.assert_called_with('bucket', prefix='', recursive=True)
 
-def test_list_files_failure():
-    mock_client = MagicMock()
-    mock_client.list_objects.side_effect = object_store.S3Error("err", "msg", "req", "host", "id", "res")
-    with patch('backend.data_layer.object_store_aws.get_minio_client', return_value=mock_client):
-        with pytest.raises(object_store.S3Error):
-            object_store.list_files('bucket')
+def test_list_files_failure(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_client.list_objects.side_effect = S3Error("err", "msg", "req", "host", "id", "res")
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        with pytest.raises(S3Error):
+            store.list_files('bucket')
+        mock_client.list_objects.assert_called_with('bucket', prefix='', recursive=True)

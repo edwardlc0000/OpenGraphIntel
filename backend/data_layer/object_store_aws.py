@@ -10,81 +10,88 @@ from backend.common.utils import get_env_variable
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-# Lazy initialization for MinIO client
-_minio_client = None
+class ObjectStoreAWS:
+    """
 
-def get_minio_config():
     """
-    Retrieves MinIO configuration from environment variables.
-    """
-    try:
-        endpoint = f"{get_env_variable('MINIO_FILES_HOST', 'minio-files')}:{get_env_variable('MINIO_FILES_PORT')}"
-        access_key = get_env_variable('MINIO_FILES_ROOT_USER')
-        secret_key = get_env_variable('MINIO_FILES_ROOT_PASSWORD')
-        secure = False  # Set to True if using HTTPS
-        return endpoint, access_key, secret_key, secure
-    except Exception as e:
-        logger.error(f"Error retrieving MinIO config: {e}")
-        raise
+    _minio_client = None
+    def __init__(self):
+        self.endpoint, self.access_key, self.secret_key, self.secure = self._get_minio_config()
+        self._initialize_client()
 
-def get_minio_client():
-    """
-    Returns a singleton MinIO client.
-    If the client is not already created, it initializes it.
-    Returns:
-        minio_client: The MinIO client.
-    """
-    global _minio_client
-    if _minio_client is None:
-        endpoint, access_key, secret_key, secure = get_minio_config()
-        _minio_client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=secure)
-    return _minio_client
+    @classmethod
+    def _get_minio_config(cls):
+        """
+        Retrieves MinIO configuration from environment variables.
+        """
+        try:
+            endpoint = f"{get_env_variable('MINIO_FILES_HOST')}:{get_env_variable('MINIO_FILES_PORT')}"
+            access_key = get_env_variable('MINIO_FILES_ROOT_USER')
+            secret_key = get_env_variable('MINIO_FILES_ROOT_PASSWORD')
+            secure = False  # Set to True if using HTTPS
+            return endpoint, access_key, secret_key, secure
+        except Exception as e:
+            logger.error(f"Error retrieving MinIO config: {e}")
+            raise
 
-def ensure_bucket(bucket_name: str):
-    """
-    Ensures the bucket exists.
-    If it does not exist, it creates the bucket.
-    Args:
-        bucket_name (str): The name of the bucket to check or create.
-    """
-    client = get_minio_client()
-    found = client.bucket_exists(bucket_name)
-    if not found:
-        client.make_bucket(bucket_name)
-        logger.info(f"Created bucket: {bucket_name}")
+    def _initialize_client(self):
+        if self._minio_client is None:
+            self._minio_client = Minio(
+                self.endpoint,
+                access_key=self.access_key,
+                secret_key=self.secret_key,
+                secure=self.secure
+            )
 
-def upload_file(bucket_name: str, object_name: str, file_path: str):
-    """
-    Uploads a file to the specified bucket.
-    """
-    client = get_minio_client()
-    ensure_bucket(bucket_name)
-    try:
-        client.fput_object(bucket_name, object_name, file_path)
-        logger.info(f"Uploaded {file_path} to {bucket_name}/{object_name}")
-    except S3Error as e:
-        logger.error(f"Failed to upload file: {e}")
-        raise
+    @property
+    def client(self):
+        """
+        Returns the MinIO client.
+        """
+        if self._minio_client is None:
+            self._initialize_client()
+        return self._minio_client
 
-def download_file(bucket_name: str, object_name: str, file_path: str):
-    """
-    Downloads a file from the specified bucket.
-    """
-    client = get_minio_client()
-    try:
-        client.fget_object(bucket_name, object_name, file_path)
-        logger.info(f"Downloaded {bucket_name}/{object_name} to {file_path}")
-    except S3Error as e:
-        logger.error(f"Failed to download file: {e}")
-        raise
+    def ensure_bucket(self, bucket_name: str):
+        """
+        Ensures the bucket exists. If it does not exist, it creates the bucket.
+        Args:
+            bucket_name (str): The name of the bucket to check or create.
+        """
+        found = self.client.bucket_exists(bucket_name)
+        if not found:
+            self.client.make_bucket(bucket_name)
+            logger.info(f"Created bucket: {bucket_name}")
 
-def list_files(bucket_name: str, prefix: str = ""):
-    """
-    Lists files in the specified bucket.
-    """
-    client = get_minio_client()
-    try:
-        return [obj.object_name for obj in client.list_objects(bucket_name, prefix=prefix, recursive=True)]
-    except S3Error as e:
-        logger.error(f"Failed to list files: {e}")
-        raise
+    def upload_file(self, bucket_name: str, object_name: str, file_path: str):
+        """
+        Uploads a file to the specified bucket.
+        """
+        self.ensure_bucket(bucket_name)
+        try:
+            self.client.fput_object(bucket_name, object_name, file_path)
+            logger.info(f"Uploaded {file_path} to {bucket_name}/{object_name}")
+        except S3Error as e:
+            logger.error(f"Failed to upload file: {e}")
+            raise
+
+    def download_file(self, bucket_name: str, object_name: str, file_path: str):
+        """
+        Downloads a file from the specified bucket.
+        """
+        try:
+            self.client.fget_object(bucket_name, object_name, file_path)
+            logger.info(f"Downloaded {bucket_name}/{object_name} to {file_path}")
+        except S3Error as e:
+            logger.error(f"Failed to download file: {e}")
+            raise
+
+    def list_files(self, bucket_name: str, prefix: str = ""):
+        """
+        Lists files in the specified bucket.
+        """
+        try:
+            return [obj.object_name for obj in self.client.list_objects(bucket_name, prefix=prefix, recursive=True)]
+        except S3Error as e:
+            logger.error(f"Failed to list files: {e}")
+            raise
