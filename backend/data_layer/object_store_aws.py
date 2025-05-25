@@ -1,4 +1,4 @@
-# backend/data_layer/blobstore.py
+# backend/data_layer/object_store_aws.py
 
 import logging
 import os

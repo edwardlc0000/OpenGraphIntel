@@ -1,4 +1,4 @@
-# backend/data_layer/objectstore_azure.py
+# backend/data_layer/object_store_azure.py
 
 import logging
 import os

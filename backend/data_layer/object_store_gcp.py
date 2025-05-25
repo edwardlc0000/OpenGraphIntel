@@ -1,4 +1,4 @@
-# backend/data_layer/objectstore_gcp.py
+# backend/data_layer/object_store_gcp.py
 
 import logging
 from google.cloud import storage

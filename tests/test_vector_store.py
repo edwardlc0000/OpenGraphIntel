@@ -1,78 +1,78 @@
-# tests/test_vectorstore.py
+# tests/test_vector_store.py
 
 import pytest
 from unittest.mock import patch, MagicMock
 from pymilvus import connections, Collection, FieldSchema, CollectionSchema, DataType
-import backend.data_layer.vectorstore as vectorstore
+import backend.data_layer.vector_store as vector_store
 
 @pytest.fixture(autouse=True)
 def reset_globals():
     """Reset global variables before each test."""
-    vectorstore._milvus_host = None
-    vectorstore._milvus_grpc_port = None
+    vector_store._milvus_host = None
+    vector_store._milvus_grpc_port = None
     pass
 
 # Test get_milvus_config
-@patch("backend.data_layer.vectorstore.get_env_variable")
+@patch("backend.data_layer.vector_store.get_env_variable")
 def test_get_milvus_config(mock_get_env_variable):
     # Mock environment variables
     mock_get_env_variable.side_effect = lambda key: "mock_host" if key == "MILVUS_HOST" else "mock_port"
 
-    host, port = vectorstore.get_milvus_config()
+    host, port = vector_store.get_milvus_config()
 
     assert host == "mock_host"
     assert port == "mock_port"
     mock_get_env_variable.assert_any_call("MILVUS_HOST")
     mock_get_env_variable.assert_any_call("MILVUS_GRPC_PORT")
 
-@patch("backend.data_layer.vectorstore.get_env_variable")
+@patch("backend.data_layer.vector_store.get_env_variable")
 def test_get_milvus_config_fail(mock_get_env_variable):
     # Simulate missing environment variable
     mock_get_env_variable.side_effect = ValueError("Environment variable not found")
 
     with pytest.raises(ValueError, match="Environment variable not found"):
-        vectorstore.get_milvus_config()
+        vector_store.get_milvus_config()
 
 # Test connect_to_milvus
-@patch("backend.data_layer.vectorstore.connections")
-@patch("backend.data_layer.vectorstore.get_milvus_config")
+@patch("backend.data_layer.vector_store.connections")
+@patch("backend.data_layer.vector_store.get_milvus_config")
 def test_connect_to_milvus(mock_get_milvus_config, mock_connections):
     # Mock Milvus connection
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
     mock_connections.has_connection.return_value = False
 
-    vectorstore.connect_to_milvus()
+    vector_store.connect_to_milvus()
 
     mock_get_milvus_config.assert_called_once()
     mock_connections.connect.assert_called_once_with(host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_once_with("default")
 
-@patch("backend.data_layer.vectorstore.connections")
-@patch("backend.data_layer.vectorstore.get_milvus_config")
+@patch("backend.data_layer.vector_store.connections")
+@patch("backend.data_layer.vector_store.get_milvus_config")
 def test_connect_to_milvus_with_existing_connection(mock_get_milvus_config, mock_connections):
     # Mock Milvus connection
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
     mock_connections.has_connection.return_value = False
 
-    vectorstore.connect_to_milvus()
-    vectorstore.connect_to_milvus()  # Call again to check for existing connection
+    vector_store.connect_to_milvus()
+    vector_store.connect_to_milvus()  # Call again to check for existing connection
 
     mock_get_milvus_config.assert_called_once()
     mock_connections.connect.assert_called_with(host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_with("default")
 
-@patch("backend.data_layer.vectorstore.connections")
-@patch("backend.data_layer.vectorstore.get_milvus_config")
+@patch("backend.data_layer.vector_store.connections")
+@patch("backend.data_layer.vector_store.get_milvus_config")
 def test_connect_to_milvus_already_connected(mock_get_milvus_config, mock_connections):
     # Simulate that the connection already exists
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
     mock_connections.has_connection.return_value = True
 
     # Call the function
-    import backend.data_layer.vectorstore as vectorstore
-    vectorstore._milvus_host = None
-    vectorstore._milvus_grpc_port = None
-    vectorstore.connect_to_milvus()
+    import backend.data_layer.vector_store as vector_store
+    vector_store._milvus_host = None
+    vector_store._milvus_grpc_port = None
+    vector_store.connect_to_milvus()
 
     # Should not call connect
     mock_connections.connect.assert_not_called()
@@ -80,24 +80,24 @@ def test_connect_to_milvus_already_connected(mock_get_milvus_config, mock_connec
     mock_connections.has_connection.assert_called_once_with("default")
 
 
-@patch("backend.data_layer.vectorstore.get_milvus_config")
-@patch("backend.data_layer.vectorstore.connections")
+@patch("backend.data_layer.vector_store.get_milvus_config")
+@patch("backend.data_layer.vector_store.connections")
 def test_connect_to_milvus_failure(mock_connections, mock_get_milvus_config):
     # Mock Milvus connection failure
     mock_get_milvus_config.return_value = ("mock_host", "mock_port")
     mock_connections.has_connection.return_value = False
     mock_connections.connect.side_effect = Exception("Connection failed")
     with pytest.raises(RuntimeError, match="Failed to connect to Milvus."):
-        vectorstore.connect_to_milvus()
+        vector_store.connect_to_milvus()
     mock_connections.connect.assert_called_once_with(
         host="mock_host", port="mock_port")
     mock_connections.has_connection.assert_called_once_with("default")
 
 # Test create_collection
-@patch("backend.data_layer.vectorstore.Collection")
-@patch("backend.data_layer.vectorstore.connect_to_milvus")
-@patch("backend.data_layer.vectorstore.CollectionSchema")
-@patch("backend.data_layer.vectorstore.FieldSchema")
+@patch("backend.data_layer.vector_store.Collection")
+@patch("backend.data_layer.vector_store.connect_to_milvus")
+@patch("backend.data_layer.vector_store.CollectionSchema")
+@patch("backend.data_layer.vector_store.FieldSchema")
 def test_create_collection(mock_field_schema, mock_collection_schema, mock_connect_to_milvus, mock_collection):
     # Predefine consistent MagicMock objects for FieldSchema
     field_id_mock = MagicMock(name="FieldSchema(id)")
@@ -115,7 +115,7 @@ def test_create_collection(mock_field_schema, mock_collection_schema, mock_conne
     mock_collection.return_value = MagicMock()
 
     collection_name = "test_collection"
-    collection = vectorstore.create_collection(collection_name)
+    collection = vector_store.create_collection(collection_name)
 
     # Assert that connect_to_milvus is called
     mock_connect_to_milvus.assert_called_once()
@@ -137,10 +137,10 @@ def test_create_collection(mock_field_schema, mock_collection_schema, mock_conne
     # Assert that the returned collection is not None
     assert collection is not None
 
-@patch("backend.data_layer.vectorstore.Collection")
-@patch("backend.data_layer.vectorstore.connect_to_milvus")
-@patch("backend.data_layer.vectorstore.CollectionSchema")
-@patch("backend.data_layer.vectorstore.FieldSchema")
+@patch("backend.data_layer.vector_store.Collection")
+@patch("backend.data_layer.vector_store.connect_to_milvus")
+@patch("backend.data_layer.vector_store.CollectionSchema")
+@patch("backend.data_layer.vector_store.FieldSchema")
 def test_create_collection_failure(mock_field_schema, mock_collection_schema, mock_connect_to_milvus, mock_collection):
     # Mock Milvus connection
     mock_connect_to_milvus.return_value = None
@@ -148,7 +148,7 @@ def test_create_collection_failure(mock_field_schema, mock_collection_schema, mo
     mock_collection.side_effect = Exception("Collection creation failed")
     collection_name = "test_collection"
     with pytest.raises(Exception, match="Collection creation failed"):
-        vectorstore.create_collection(collection_name)
+        vector_store.create_collection(collection_name)
     # Assert that connect_to_milvus is called
     mock_connect_to_milvus.assert_called_once()
     # Assert that Collection is attempted to be created
@@ -156,8 +156,8 @@ def test_create_collection_failure(mock_field_schema, mock_collection_schema, mo
         name=collection_name, schema=mock_collection_schema.return_value)
 
 # Test insert_vectors
-@patch("backend.data_layer.vectorstore.Collection")
-@patch("backend.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vector_store.Collection")
+@patch("backend.data_layer.vector_store.connect_to_milvus")
 def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     # Mock vector insertion
     mock_collection.exists.return_value = False
@@ -167,7 +167,7 @@ def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     ids = [1, 2, 3]
     embeddings = [[0.1] * 1024, [0.2] * 1024, [0.3] * 1024]
 
-    vectorstore.insert_vectors(collection_name, ids, embeddings)
+    vector_store.insert_vectors(collection_name, ids, embeddings)
 
     # Verify that connect_to_milvus is called (but not necessarily only once)
     assert mock_connect_to_milvus.call_count > 0
@@ -181,8 +181,8 @@ def test_insert_vectors(mock_connect_to_milvus, mock_collection):
     # Verify that the collection is flushed
     mock_collection.return_value.flush.assert_called_once()
 
-@patch("backend.data_layer.vectorstore.Collection")
-@patch("backend.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vector_store.Collection")
+@patch("backend.data_layer.vector_store.connect_to_milvus")
 def test_insert_vectors_failure(mock_connect_to_milvus, mock_collection):
     # Mock collection existence and instance
     mock_collection.exists.return_value = True
@@ -195,7 +195,7 @@ def test_insert_vectors_failure(mock_connect_to_milvus, mock_collection):
     embeddings = [[0.1] * 1024, [0.2] * 1024, [0.3] * 1024]
 
     with pytest.raises(Exception, match="Insertion failed"):
-        vectorstore.insert_vectors(collection_name, ids, embeddings)
+        vector_store.insert_vectors(collection_name, ids, embeddings)
 
     mock_connect_to_milvus.assert_called_once()
     mock_collection.exists.assert_called_once_with(collection_name)
@@ -203,8 +203,8 @@ def test_insert_vectors_failure(mock_connect_to_milvus, mock_collection):
     collection_instance.flush.assert_called_once()
 
 # Test search_vectors
-@patch("backend.data_layer.vectorstore.Collection")
-@patch("backend.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vector_store.Collection")
+@patch("backend.data_layer.vector_store.connect_to_milvus")
 def test_search_vectors(mock_connect_to_milvus, mock_collection):
     # Mock vector search
     mock_collection.return_value = MagicMock()
@@ -214,7 +214,7 @@ def test_search_vectors(mock_connect_to_milvus, mock_collection):
     query_vectors = [[0.1] * 1024]
     top_k = 5
 
-    results = vectorstore.search_vectors(collection_name, query_vectors, top_k)
+    results = vector_store.search_vectors(collection_name, query_vectors, top_k)
 
     mock_connect_to_milvus.assert_called_once()
     mock_collection.assert_called_once_with(collection_name)
@@ -227,8 +227,8 @@ def test_search_vectors(mock_connect_to_milvus, mock_collection):
     )
     assert results == "mock_results"
 
-@patch("backend.data_layer.vectorstore.Collection")
-@patch("backend.data_layer.vectorstore.connect_to_milvus")
+@patch("backend.data_layer.vector_store.Collection")
+@patch("backend.data_layer.vector_store.connect_to_milvus")
 def test_search_vectors_failure(mock_connect_to_milvus, mock_collection):
     # Mock collection instance and make search raise an exception
     collection_instance = MagicMock()
@@ -240,7 +240,7 @@ def test_search_vectors_failure(mock_connect_to_milvus, mock_collection):
     top_k = 5
 
     with pytest.raises(Exception, match="Search failed"):
-        vectorstore.search_vectors(collection_name, query_vectors, top_k)
+        vector_store.search_vectors(collection_name, query_vectors, top_k)
 
     mock_connect_to_milvus.assert_called_once()
     mock_collection.assert_called_once_with(collection_name)

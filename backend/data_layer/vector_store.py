@@ -1,4 +1,4 @@
-# backend/data_layer/vectorstore.py
+# backend/data_layer/vector_store.py
 
 # Import dependencies
 import logging
