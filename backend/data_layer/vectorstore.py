@@ -29,8 +29,8 @@ def get_milvus_config() -> tuple[str, str]:
         tuple: A tuple containing the Milvus host and port.
     """
     try:
-        MILVUS_HOST = get_env_variable("MILVUS_HOST")
-        MILVUS_GRPC_PORT = get_env_variable("MILVUS_GRPC_PORT")
+        MILVUS_HOST: Final[str] = get_env_variable("MILVUS_HOST")
+        MILVUS_GRPC_PORT: Final[str] = get_env_variable("MILVUS_GRPC_PORT")
         return MILVUS_HOST, MILVUS_GRPC_PORT
     except ValueError as e:
         logger.error(f"Error retrieving environment variables: {e}")
