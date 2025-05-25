@@ -55,6 +55,13 @@ def test_ensure_bucket_not_exists():
         objectstore.ensure_bucket('test-bucket')
         mock_client.create_bucket.assert_called_with('test-bucket')
 
+def test_ensure_bucket_failure():
+    mock_client = MagicMock()
+    mock_client.lookup_bucket.side_effect = objectstore.GoogleAPIError("error")
+    with patch('backend.data_layer.objectstore_gcp.get_gcs_client', return_value=mock_client):
+        with pytest.raises(objectstore.GoogleAPIError):
+            objectstore.ensure_bucket('test-bucket')
+
 def test_upload_file_success():
     mock_client = MagicMock()
     mock_bucket = MagicMock()
