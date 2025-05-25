@@ -2,118 +2,145 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-import backend.data_layer.object_store_gcp as object_store
+from google.cloud import storage
+from google.api_core.exceptions import GoogleAPIError
+from backend.data_layer.object_store_gcp import ObjectStoreGCP
 
-@pytest.fixture(autouse=True)
-def reset_gcs_client():
-    # Reset the singleton before each test
-    object_store._gcs_client = None
-
-def test_get_gcs_config_success():
+@pytest.fixture
+def mock_env_variables():
+    env_vars = {
+        'GCP_PROJECT_ID': 'my-project',
+        'GCS_BUCKET_NAME': 'my-bucket'
+    }
     with patch('backend.data_layer.object_store_gcp.get_env_variable') as mock_env:
-        mock_env.side_effect = lambda key, default=None: {
-            'GCP_PROJECT_ID': 'test-project',
-            'GCS_BUCKET_NAME': 'test-bucket'
-        }[key]
-        project_id, bucket_name = object_store.get_gcs_config()
-        assert project_id == 'test-project'
-        assert bucket_name == 'test-bucket'
+        mock_env.side_effect = lambda key: env_vars[key]
+        yield
 
-def test_get_gcs_config_failure():
-    with patch('backend.data_layer.object_store_gcp.get_env_variable', side_effect=Exception("env error")):
-        with pytest.raises(Exception):
-            object_store.get_gcs_config()
-
-def test_get_gcs_client_singleton():
-    with patch('backend.data_layer.object_store_gcp.get_gcs_config') as mock_conf, \
-         patch('backend.data_layer.object_store_gcp.storage.Client') as mock_client:
-        mock_conf.return_value = ('test-project', 'test-bucket')
-        client_instance = MagicMock()
-        mock_client.return_value = client_instance
-        client1 = object_store.get_gcs_client()
-        client2 = object_store.get_gcs_client()
-        assert client1 is client2
-        mock_client.assert_called_once_with(project='test-project')
-
-def test_get_gcs_client_initialization_failure():
-    with patch('backend.data_layer.object_store_gcp.get_gcs_config', side_effect=object_store.DefaultCredentialsError("error")):
-        with pytest.raises(object_store.DefaultCredentialsError):
-            object_store.get_gcs_client()
-
-def test_ensure_bucket_exists():
+def setup_gcs_mocks(mock_storage_client):
     mock_client = MagicMock()
-    mock_client.lookup_bucket.return_value = MagicMock()
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        object_store.ensure_bucket('test-bucket')
-        mock_client.lookup_bucket.assert_called_with('test-bucket')
-        mock_client.create_bucket.assert_not_called()
+    mock_storage_client.return_value = mock_client
 
-def test_ensure_bucket_not_exists():
-    mock_client = MagicMock()
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_get_gcs_config_success(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    store = ObjectStoreGCP()
+    assert store.project_id == 'my-project'
+    assert store.bucket_name == 'my-bucket'
+
+@patch('backend.data_layer.object_store_gcp.get_env_variable', side_effect=Exception("env error"))
+def test_get_gcs_config_failure(mock_env):
+    with pytest.raises(Exception):
+        ObjectStoreGCP()
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_gcs_client_singleton(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    store1 = ObjectStoreGCP()
+    client1 = store1.client
+    store2 = ObjectStoreGCP()
+    client2 = store2.client
+    assert client1 is client2
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_ensure_bucket_exists(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = MagicMock()
+    mock_client.lookup_bucket.return_value = mock_bucket
+    store = ObjectStoreGCP()
+    store.ensure_bucket('my-bucket')
+    mock_client.lookup_bucket.assert_called_with('my-bucket')
+    mock_client.create_bucket.assert_not_called()
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_ensure_bucket_not_exists(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
     mock_client.lookup_bucket.return_value = None
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        object_store.ensure_bucket('test-bucket')
-        mock_client.create_bucket.assert_called_with('test-bucket')
+    store = ObjectStoreGCP()
+    store.ensure_bucket('my-bucket')
+    mock_client.create_bucket.assert_called_with('my-bucket')
 
-def test_ensure_bucket_failure():
-    mock_client = MagicMock()
-    mock_client.lookup_bucket.side_effect = object_store.GoogleAPIError("error")
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        with pytest.raises(object_store.GoogleAPIError):
-            object_store.ensure_bucket('test-bucket')
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_upload_file_success(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = mock_client.get_bucket.return_value
+    mock_blob = mock_bucket.blob.return_value
+    mock_blob.upload_from_filename.return_value = None
 
-def test_upload_file_success():
-    mock_client = MagicMock()
-    mock_bucket = MagicMock()
-    mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
-    mock_client.get_bucket.return_value = mock_bucket
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client), \
-         patch('backend.data_layer.object_store_gcp.ensure_bucket'):
-        object_store.upload_file('bucket', 'obj', '/tmp/file')
-        mock_bucket.blob.assert_called_with('obj')
-        mock_blob.upload_from_filename.assert_called_with('/tmp/file')
+    store = ObjectStoreGCP()
+    store.upload_file('my-bucket', 'my-object', '/path/to/file')
+    mock_bucket.blob.assert_called_with('my-object')
+    mock_blob.upload_from_filename.assert_called_with('/path/to/file')
 
-def test_upload_file_failure():
-    mock_client = MagicMock()
-    mock_client.get_bucket.side_effect = object_store.GoogleAPIError("error")
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        with pytest.raises(object_store.GoogleAPIError):
-            object_store.upload_file('bucket', 'obj', '/tmp/file')
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_upload_file_failure(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = mock_client.get_bucket.return_value
+    mock_blob = mock_bucket.blob.return_value
+    mock_blob.upload_from_filename.side_effect = GoogleAPIError("Upload error")
 
-def test_download_file_success():
-    mock_client = MagicMock()
-    mock_bucket = MagicMock()
-    mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
-    mock_client.get_bucket.return_value = mock_bucket
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        object_store.download_file('bucket', 'obj', '/tmp/file')
-        mock_bucket.blob.assert_called_with('obj')
-        mock_blob.download_to_filename.assert_called_with('/tmp/file')
+    store = ObjectStoreGCP()
+    with pytest.raises(GoogleAPIError):
+        store.upload_file('my-bucket', 'my-object', '/path/to/file')
 
-def test_download_file_failure():
-    mock_client = MagicMock()
-    mock_client.get_bucket.side_effect = object_store.GoogleAPIError("error")
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        with pytest.raises(object_store.GoogleAPIError):
-            object_store.download_file('bucket', 'obj', '/tmp/file')
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_download_file_success(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = mock_client.get_bucket.return_value
+    mock_blob = mock_bucket.blob.return_value
+    mock_blob.download_to_filename.return_value = None
 
-def test_list_files_success():
-    mock_client = MagicMock()
-    mock_bucket = MagicMock()
-    mock_blob1 = MagicMock()
-    mock_blob1.name = 'file1.txt'
-    mock_client.get_bucket.return_value = mock_bucket
-    mock_bucket.list_blobs.return_value = [mock_blob1]
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        files = object_store.list_files('bucket')
-        assert files == ['file1.txt']
-        mock_bucket.list_blobs.assert_called_with(prefix='')
+    store = ObjectStoreGCP()
+    store.download_file('my-bucket', 'my-object', '/path/to/file')
+    mock_bucket.blob.assert_called_with('my-object')
+    mock_blob.download_to_filename.assert_called_with('/path/to/file')
 
-def test_list_files_failure():
-    mock_client = MagicMock()
-    mock_client.get_bucket.side_effect = object_store.GoogleAPIError("error")
-    with patch('backend.data_layer.object_store_gcp.get_gcs_client', return_value=mock_client):
-        with pytest.raises(object_store.GoogleAPIError):
-            object_store.list_files('bucket')
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_download_file_failure(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = mock_client.get_bucket.return_value
+    mock_blob = mock_bucket.blob.return_value
+    mock_blob.download_to_filename.side_effect = GoogleAPIError("Download error")
+
+    store = ObjectStoreGCP()
+    with pytest.raises(GoogleAPIError):
+        store.download_file('my-bucket', 'my-object', '/path/to/file')
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_list_files_success(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = mock_client.get_bucket.return_value
+    # Mocking blobs with names directly in the returned list
+    mock_blob_1 = MagicMock()
+    mock_blob_1.name = 'file1'
+
+    mock_blob_2 = MagicMock()
+    mock_blob_2.name = 'file2'
+
+    mock_bucket.list_blobs.return_value = [mock_blob_1, mock_blob_2]
+
+    # Instantiate ObjectStoreGCP and call list_files
+    store = ObjectStoreGCP()
+    files = store.list_files('my-bucket')
+
+    # Assert that the file names are as expected
+    assert files == ['file1', 'file2']
+    # Verify list_blobs was called with correct parameters
+    mock_bucket.list_blobs.assert_called_with(prefix='')
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_list_files_failure(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_bucket = mock_client.get_bucket.return_value
+    mock_bucket.list_blobs.side_effect = GoogleAPIError("List error")
+
+    store = ObjectStoreGCP()
+    with pytest.raises(GoogleAPIError):
+        store.list_files('my-bucket')
