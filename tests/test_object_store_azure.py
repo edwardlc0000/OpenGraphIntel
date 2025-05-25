@@ -2,123 +2,181 @@
 
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
-import backend.data_layer.object_store_azure as object_store
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError, AzureError
+from backend.data_layer.object_store_azure import ObjectStoreAzure  # Adjust based on your module path
 
-@pytest.fixture(autouse=True)
-def reset_blob_service_client():
-    object_store._blob_service_client = None
-
-def test_get_azure_blob_config_success():
+@pytest.fixture
+def mock_env_variables():
+    env_vars = {
+        'AZURE_BLOB_CONNECTION_STRING': 'DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=key;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;'
+    }
     with patch('backend.data_layer.object_store_azure.get_env_variable') as mock_env:
-        mock_env.return_value = "UseDevelopmentStorage=true"
-        conn_str = object_store.get_azure_blob_config()
-        assert conn_str == "UseDevelopmentStorage=true"
+        mock_env.side_effect = lambda key: env_vars[key]
+        yield
 
-def test_get_azure_blob_config_failure():
-    with patch('backend.data_layer.object_store_azure.get_env_variable', side_effect=Exception("env error")):
-        with pytest.raises(Exception):
-            object_store.get_azure_blob_config()
+@patch('backend.data_layer.object_store_azure.get_env_variable')
+def test_get_azure_blob_config_success(mock_env):
+    mock_env.side_effect = lambda key: {
+        'AZURE_BLOB_CONNECTION_STRING': 'DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=key;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;'
+    }[key]
+    store = ObjectStoreAzure()
+    assert store.connection_string == 'DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=key;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;'
 
-def test_get_blob_service_client_singleton():
-    with patch('backend.data_layer.object_store_azure.get_azure_blob_config') as mock_conf, \
-         patch('backend.data_layer.object_store_azure.BlobServiceClient') as mock_bsc:
-        mock_conf.return_value = "conn_str"
-        instance = MagicMock()
-        mock_bsc.from_connection_string.return_value = instance
-        client1 = object_store.get_blob_service_client()
-        client2 = object_store.get_blob_service_client()
-        assert client1 is client2
-        mock_bsc.from_connection_string.assert_called_once_with("conn_str")
+@patch('backend.data_layer.object_store_azure.get_env_variable', side_effect=Exception("env error"))
+def test_get_azure_blob_config_failure(mock_env):
+    with pytest.raises(Exception):
+        ObjectStoreAzure()
 
-def test_ensure_container_creates():
-    mock_client = MagicMock()
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client):
-        object_store.ensure_container('testcontainer')
-        mock_client.create_container.assert_called_with('testcontainer')
+@patch('backend.data_layer.object_store_azure.BlobServiceClient.from_connection_string')
+def test_blob_client_singleton(mock_blob_service_client, mock_env_variables):
+    mock_instance = MagicMock()
+    mock_blob_service_client.return_value = mock_instance
+    store1 = ObjectStoreAzure()
+    client1 = store1.client
+    store2 = ObjectStoreAzure()
+    client2 = store2.client
+    assert client1 is client2
 
-def test_ensure_container_exists():
-    mock_client = MagicMock()
-    mock_client.create_container.side_effect = object_store.ResourceExistsError("exists")
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client):
-        object_store.ensure_container('testcontainer')
-        mock_client.create_container.assert_called_with('testcontainer')
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_ensure_container_exists(mock_blob_service_client, mock_env_variables):
+    object_store = ObjectStoreAzure()
+    mock_client_instance = mock_blob_service_client.from_connection_string.return_value
+    mock_create_container = mock_client_instance.create_container
+    mock_create_container.side_effect = ResourceExistsError
+    container_name = "existing-container"
+    object_store.ensure_container(container_name)
+    mock_create_container.assert_called_once_with(container_name)
 
-def test_upload_file_success():
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_ensure_container_not_exists(mock_blob_service_client, mock_env_variables):
+    object_store = ObjectStoreAzure()
+    mock_client_instance = mock_blob_service_client.from_connection_string.return_value
+    mock_create_container = mock_client_instance.create_container
+    mock_create_container.side_effect = lambda name: None  # Simulate successful container creation
+    container_name = "test-container"
+    object_store.ensure_container(container_name)
+    mock_create_container.assert_called_once_with(container_name)
+
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_upload_file_success(mock_blob_service_client, mock_env_variables):
+    # Arrange
+    object_store = ObjectStoreAzure()
+    mock_client_instance = mock_blob_service_client.from_connection_string.return_value
+    mock_blob_client = mock_client_instance.get_blob_client.return_value
+    mock_blob_client.upload_blob = MagicMock()
+
+    container_name = "test-container"
+    blob_name = "blob.txt"
+    file_path = "path/to/file.txt"
+
+    # Mock opening a file
+    with patch('builtins.open', mock_open(read_data="data")) as mock_file:
+        # Act
+        object_store.upload_file(container_name, blob_name, file_path)
+
+    # Assert
+    object_store.ensure_container(container_name)
+    mock_blob_client.upload_blob.assert_called_once()
+    mock_file.assert_called_once_with(file_path, "rb")
+
+
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_upload_file_failure(mock_blob_service_client, mock_env_variables):
+    # Arrange
+    object_store = ObjectStoreAzure()
+    mock_client_instance = mock_blob_service_client.from_connection_string.return_value
+    mock_blob_client = mock_client_instance.get_blob_client.return_value
+    mock_blob_client.upload_blob = MagicMock(side_effect=AzureError("Upload failed"))
+
+    container_name = "test-container"
+    blob_name = "blob.txt"
+    file_path = "path/to/file.txt"
+
+    # Mock opening a file
+    with patch('builtins.open', mock_open(read_data="data")):
+        # Act & Assert
+        with pytest.raises(AzureError, match="Upload failed"):
+            object_store.upload_file(container_name, blob_name, file_path)
+
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_download_file_success(mock_blob_service_client, mock_env_variables):
     mock_client = MagicMock()
     mock_blob_client = MagicMock()
     mock_client.get_blob_client.return_value = mock_blob_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client), \
-         patch('backend.data_layer.object_store_azure.ensure_container'), \
-         patch("builtins.open", mock_open(read_data=b"data")) as m:
-        object_store.upload_file('container', 'blob', '/tmp/file')
-        mock_client.get_blob_client.assert_called_with(container='container', blob='blob')
-        mock_blob_client.upload_blob.assert_called()
-        m.assert_called_with('/tmp/file', 'rb')
 
-def test_upload_file_failure():
-    mock_client = MagicMock()
-    mock_blob_client = MagicMock()
-    mock_blob_client.upload_blob.side_effect = Exception("fail")
-    mock_client.get_blob_client.return_value = mock_blob_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client), \
-         patch('backend.data_layer.object_store_azure.ensure_container'), \
-         patch("builtins.open", mock_open(read_data=b"data")):
-        with pytest.raises(Exception):
-            object_store.upload_file('container', 'blob', '/tmp/file')
+    # Mock the download_blob process
+    mock_blob_data = MagicMock()
+    mock_blob_data.readall.return_value = b"data"
+    mock_blob_client.download_blob.return_value = mock_blob_data
 
-def test_download_file_success():
-    mock_client = MagicMock()
-    mock_blob_client = MagicMock()
-    mock_download = MagicMock()
-    mock_download.readall.return_value = b"abc"
-    mock_blob_client.download_blob.return_value = mock_download
-    mock_client.get_blob_client.return_value = mock_blob_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client), \
-         patch("builtins.open", mock_open()) as m:
+    with patch('backend.data_layer.object_store_azure.BlobServiceClient.from_connection_string',
+               return_value=mock_client), \
+            patch("builtins.open", mock_open()) as mock_file:
+        object_store = ObjectStoreAzure()
         object_store.download_file('container', 'blob', '/tmp/file')
+
         mock_client.get_blob_client.assert_called_with(container='container', blob='blob')
-        mock_blob_client.download_blob.assert_called()
-        handle = m()
-        handle.write.assert_called_with(b"abc")
+        mock_blob_client.download_blob.assert_called_once()
+        mock_file().write.assert_called_once_with(b"data")
 
-def test_download_file_not_found():
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_download_file_failure(mock_blob_service_client, mock_env_variables):
     mock_client = MagicMock()
     mock_blob_client = MagicMock()
-    mock_blob_client.download_blob.side_effect = object_store.ResourceNotFoundError("not found")
+    mock_blob_client.download_blob.side_effect = ResourceNotFoundError("Blob not found")
     mock_client.get_blob_client.return_value = mock_blob_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client), \
-         patch("builtins.open", mock_open()):
-        with pytest.raises(object_store.ResourceNotFoundError):
-            object_store.download_file('container', 'blob', '/tmp/file')
 
-def test_download_file_other_error():
-    mock_client = MagicMock()
-    mock_blob_client = MagicMock()
-    mock_blob_client.download_blob.side_effect = Exception("fail")
-    mock_client.get_blob_client.return_value = mock_blob_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client), \
-         patch("builtins.open", mock_open()):
-        with pytest.raises(Exception):
-            object_store.download_file('container', 'blob', '/tmp/file')
+    with patch('backend.data_layer.object_store_azure.BlobServiceClient.from_connection_string',
+               return_value=mock_client), \
+            patch("builtins.open", mock_open()), \
+            pytest.raises(ResourceNotFoundError, match="Blob not found"):
+        object_store = ObjectStoreAzure()
+        object_store.download_file('container', 'blob', '/tmp/file')
 
-def test_list_files_success():
+
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_list_files_success(mock_blob_service_client, mock_env_variables):
+    # Mock the Azure client and container interactions
     mock_client = MagicMock()
     mock_container_client = MagicMock()
-    mock_blob = MagicMock()
-    mock_blob.name = "file1.txt"
-    mock_container_client.list_blobs.return_value = [mock_blob]
+
+    # Create a mock blob with a name attribute
+    mock_blob1 = MagicMock()
+    mock_blob1.name = 'file1.txt'
+    mock_blob2 = MagicMock()
+    mock_blob2.name = 'file2.txt'
+
+    # Mock list_blobs return value
+    mock_container_client.list_blobs.return_value = [mock_blob1, mock_blob2]
     mock_client.get_container_client.return_value = mock_container_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client):
+
+    # Use the mock client when the BlobServiceClient is initialized
+    with patch('backend.data_layer.object_store_azure.BlobServiceClient.from_connection_string',
+               return_value=mock_client):
+        object_store = ObjectStoreAzure()
         files = object_store.list_files('container')
-        assert files == ['file1.txt']
+
+        # Check if the files returned match the mock setup
+        assert files == ['file1.txt', 'file2.txt']
         mock_client.get_container_client.assert_called_with('container')
         mock_container_client.list_blobs.assert_called_with(name_starts_with='')
 
-def test_list_files_failure():
+
+@patch('backend.data_layer.object_store_azure.BlobServiceClient')
+def test_list_files_failure(mock_blob_service_client, mock_env_variables):
+    # Mock the Azure client and container interactions
     mock_client = MagicMock()
     mock_container_client = MagicMock()
+
+    # Simulate an exception when list_blobs is called
     mock_container_client.list_blobs.side_effect = Exception("fail")
     mock_client.get_container_client.return_value = mock_container_client
-    with patch('backend.data_layer.object_store_azure.get_blob_service_client', return_value=mock_client):
-        with pytest.raises(Exception):
+
+    # Use the mock client when the BlobServiceClient is initialized
+    with patch('backend.data_layer.object_store_azure.BlobServiceClient.from_connection_string',
+               return_value=mock_client):
+        object_store = ObjectStoreAzure()
+
+        # Check that an exception is raised with the expected message
+        with pytest.raises(Exception, match="fail"):
             object_store.list_files('container')
