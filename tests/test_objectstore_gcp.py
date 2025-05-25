@@ -35,6 +35,11 @@ def test_get_gcs_client_singleton():
         assert client1 is client2
         mock_client.assert_called_once_with(project='test-project')
 
+def test_get_gcs_client_initialization_failure():
+    with patch('backend.data_layer.objectstore_gcp.get_gcs_config', side_effect=objectstore.DefaultCredentialsError("error")):
+        with pytest.raises(objectstore.DefaultCredentialsError):
+            objectstore.get_gcs_client()
+
 def test_ensure_bucket_exists():
     mock_client = MagicMock()
     mock_client.lookup_bucket.return_value = MagicMock()
@@ -62,6 +67,13 @@ def test_upload_file_success():
         mock_bucket.blob.assert_called_with('obj')
         mock_blob.upload_from_filename.assert_called_with('/tmp/file')
 
+def test_upload_file_failure():
+    mock_client = MagicMock()
+    mock_client.get_bucket.side_effect = objectstore.GoogleAPIError("error")
+    with patch('backend.data_layer.objectstore_gcp.get_gcs_client', return_value=mock_client):
+        with pytest.raises(objectstore.GoogleAPIError):
+            objectstore.upload_file('bucket', 'obj', '/tmp/file')
+
 def test_download_file_success():
     mock_client = MagicMock()
     mock_bucket = MagicMock()
@@ -72,6 +84,13 @@ def test_download_file_success():
         objectstore.download_file('bucket', 'obj', '/tmp/file')
         mock_bucket.blob.assert_called_with('obj')
         mock_blob.download_to_filename.assert_called_with('/tmp/file')
+
+def test_download_file_failure():
+    mock_client = MagicMock()
+    mock_client.get_bucket.side_effect = objectstore.GoogleAPIError("error")
+    with patch('backend.data_layer.objectstore_gcp.get_gcs_client', return_value=mock_client):
+        with pytest.raises(objectstore.GoogleAPIError):
+            objectstore.download_file('bucket', 'obj', '/tmp/file')
 
 def test_list_files_success():
     mock_client = MagicMock()
