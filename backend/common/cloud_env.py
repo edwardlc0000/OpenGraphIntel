@@ -113,10 +113,10 @@ def detect_serverless_env() -> str:
     """
     if "AWS_EXECUTION_ENV" in os.environ:
         return "aws-lambda"
-    elif "FUNCTION_NAME" in os.environ:
-        return "gcp-cloud-functions"
     elif "AZURE_FUNCTIONS_ENVIRONMENT" in os.environ:
         return "azure-functions"
+    elif "FUNCTION_NAME" in os.environ:
+        return "gcp-cloud-functions"
 
     logging.error("Unsupported cloud provider detected.")
     raise RuntimeError("Unsupported cloud provider detected.")
