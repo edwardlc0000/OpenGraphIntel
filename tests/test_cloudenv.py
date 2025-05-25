@@ -72,17 +72,82 @@ def test_detect_k8s_env_failure():
     with patch('os.path.exists', return_value=False):
         assert cloud_env.detect_k8s_env() is False
 
-def test_detect_k8s_provider_aws():
-    pass
+def test_detect_k8s_provider_aws(mocker):
+    # Mock the Kubernetes API calls and environment
+    mocker.patch('kubernetes.config.load_incluster_config')
+    mocker.patch('os.getenv', return_value='test-pod')
+    mocker.patch('builtins.open', mocker.mock_open(read_data='test-namespace'))
 
-def test_detect_k8s_provider_azure():
-    pass
+    # Mock CoreV1Api to return a pod with a specific node name
+    mock_core_v1_api = mocker.patch('kubernetes.client.CoreV1Api')
+    mock_pod = MagicMock()
+    mock_pod.spec.node_name = 'test-node'
+    mock_core_v1_api.return_value.read_namespaced_pod.return_value = mock_pod
 
-def test_detect_k8s_provider_gcp():
-    pass
+    # Mock node information to simulate AWS EKS
+    mock_node = MagicMock()
+    mock_node.metadata.labels = {"eks.amazonaws.com/nodegroup": "my-node-group"}
+    mock_core_v1_api.return_value.read_node.return_value = mock_node
 
-def test_detect_k8s_provider_unsupported():
-    pass
+    assert cloud_env.detect_k8s_provider() == "aws-eks"
+
+def test_detect_k8s_provider_azure(mocker):
+    # Mock the Kubernetes API calls and environment
+    mocker.patch('kubernetes.config.load_incluster_config')
+    mocker.patch('os.getenv', return_value='test-pod')
+    mocker.patch('builtins.open', mocker.mock_open(read_data='test-namespace'))
+
+    # Mock CoreV1Api to return a pod with a specific node name
+    mock_core_v1_api = mocker.patch('kubernetes.client.CoreV1Api')
+    mock_pod = MagicMock()
+    mock_pod.spec.node_name = 'test-node'
+    mock_core_v1_api.return_value.read_namespaced_pod.return_value = mock_pod
+
+    # Mock node information to simulate Azure AKS
+    mock_node = MagicMock()
+    mock_node.metadata.labels = {"kubernetes.azure.com/cluster": "my-cluster"}
+    mock_core_v1_api.return_value.read_node.return_value = mock_node
+
+    assert cloud_env.detect_k8s_provider() == "azure-aks"
+
+def test_detect_k8s_provider_gcp(mocker):
+    # Mock the Kubernetes API calls and environment
+    mocker.patch('kubernetes.config.load_incluster_config')
+    mocker.patch('os.getenv', return_value='test-pod')
+    mocker.patch('builtins.open', mocker.mock_open(read_data='test-namespace'))
+
+    # Mock CoreV1Api to return a pod with a specific node name
+    mock_core_v1_api = mocker.patch('kubernetes.client.CoreV1Api')
+    mock_pod = MagicMock()
+    mock_pod.spec.node_name = 'test-node'
+    mock_core_v1_api.return_value.read_namespaced_pod.return_value = mock_pod
+
+    # Mock node information to simulate GCP GKE
+    mock_node = MagicMock()
+    mock_node.metadata.labels = {"cloud.google.com/gke-nodepool": "my-node-pool"}
+    mock_core_v1_api.return_value.read_node.return_value = mock_node
+
+    assert cloud_env.detect_k8s_provider() == "gcp-gke"
+
+def test_detect_k8s_provider_unsupported(mocker):
+    # Mock the Kubernetes API calls and environment
+    mocker.patch('kubernetes.config.load_incluster_config')
+    mocker.patch('os.getenv', return_value='test-pod')
+    mocker.patch('builtins.open', mocker.mock_open(read_data='test-namespace'))
+
+    # Mock CoreV1Api to return a pod with a specific node name
+    mock_core_v1_api = mocker.patch('kubernetes.client.CoreV1Api')
+    mock_pod = MagicMock()
+    mock_pod.spec.node_name = 'test-node'
+    mock_core_v1_api.return_value.read_namespaced_pod.return_value = mock_pod
+
+    # Mock node information to simulate an unsupported provider
+    mock_node = MagicMock()
+    mock_node.metadata.labels = {"unsupported.label": "value"}
+    mock_core_v1_api.return_value.read_node.return_value = mock_node
+
+    with pytest.raises(RuntimeError, match="Unsupported Kubernetes provider detected."):
+        cloud_env.detect_k8s_provider()
 
 def test_detect_severless_env_aws(monkeypatch):
     monkeypatch.setenv("AWS_EXECUTION_ENV", "test_function")
