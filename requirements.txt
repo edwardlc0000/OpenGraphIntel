@@ -46,3 +46,4 @@ python-dotenv
 tqdm
 lxml
 requests
+kubernetes
