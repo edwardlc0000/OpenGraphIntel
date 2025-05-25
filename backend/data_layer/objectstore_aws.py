@@ -30,6 +30,9 @@ def get_minio_config():
 def get_minio_client():
     """
     Returns a singleton MinIO client.
+    If the client is not already created, it initializes it.
+    Returns:
+        minio_client: The MinIO client.
     """
     global _minio_client
     if _minio_client is None:
@@ -40,6 +43,9 @@ def get_minio_client():
 def ensure_bucket(bucket_name: str):
     """
     Ensures the bucket exists.
+    If it does not exist, it creates the bucket.
+    Args:
+        bucket_name (str): The name of the bucket to check or create.
     """
     client = get_minio_client()
     found = client.bucket_exists(bucket_name)
