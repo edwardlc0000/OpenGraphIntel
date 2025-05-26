@@ -4,7 +4,7 @@
 import logging
 from typing import Generator
 from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import Session, sessionmaker, declarative_base
+from sqlalchemy.orm import Session, sessionmaker
 from typing import Final
 
 # Import custom modules
@@ -13,12 +13,6 @@ from backend.models.base import Base
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-# Import environment variables
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class DatabaseManager:
     """

@@ -3,10 +3,8 @@
 import logging
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
-from dotenv import load_dotenv
 from backend.common.utils import get_env_variable
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 class ObjectStoreAzure:

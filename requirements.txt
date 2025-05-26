@@ -29,6 +29,7 @@ sentence-transformers
 
 # Graph database
 neo4j
+neomodel
 
 # LLM support: Meta Llama 4 Maverick via Hugging Face
 transformers

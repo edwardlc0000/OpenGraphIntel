@@ -4,10 +4,8 @@ import logging
 from google.cloud import storage
 from google.auth.exceptions import DefaultCredentialsError
 from google.api_core.exceptions import GoogleAPIError
-from dotenv import load_dotenv
 from backend.common.utils import get_env_variable
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 class ObjectStoreGCP:
