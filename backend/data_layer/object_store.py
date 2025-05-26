@@ -17,23 +17,22 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-_object_store_instance = None
-
 class ObjectStore:
     """
     A factory class to get an instance of the appropriate object store based on the cloud environment.
     """
-    @staticmethod
-    def get_object_store() -> object:
+    _object_store_instance = None
+
+    @classmethod
+    def get_object_store(cls) -> object:
         """
         This function dynamically imports the appropriate object store module based on the cloud environment.
         It checks for an environment variable override and defaults to using the detected environment.
         Returns:
             object: An instance of the object store class for the detected cloud environment.
         """
-        global _object_store_instance
-        if _object_store_instance is None:
-            if os.getenv("CLOUD_ENV_OVERRIDE") is not None:
+        if cls._object_store_instance is None:
+            if os.getenv("CLOUD_ENV_OVERRIDE") is not None or os.getenv("CLOUD_ENV_OVERRIDE", "") != "":
                 cloud_env = os.getenv("CLOUD_ENV_OVERRIDE")
             else:
                 cloud_env = detect_env().lower()
@@ -54,5 +53,5 @@ class ObjectStore:
             logger.info(f"Importing module {module_name}.{class_name}")
             module = importlib.import_module(module_name)
             object_store_class = getattr(module, class_name)
-            _object_store_instance = object_store_class()
-        return _object_store_instance
+            cls._object_store_instance = object_store_class()
+        return cls._object_store_instance
