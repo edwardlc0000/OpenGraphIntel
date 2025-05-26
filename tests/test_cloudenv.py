@@ -5,6 +5,11 @@ import requests
 from unittest.mock import patch, MagicMock
 import backend.common.cloud_env as cloud_env
 
+def test_detect_server_env():
+    with patch('requests.get') as mock_get:
+        mock_get.return_value.status_code = 200
+        assert cloud_env.detect_server_env() is True
+
 def test_detect_server_env_failure():
     with patch('requests.get') as mock_get:
         mock_get.side_effect = requests.RequestException
@@ -14,11 +19,6 @@ def test_detect_aws_metadata():
     with patch('requests.get') as mock_get:
         mock_get.return_value.status_code = 200
         assert cloud_env.detect_aws_metadata() is True
-
-def test_detect_server_env():
-    with patch('requests.get') as mock_get:
-        mock_get.return_value.status_code = 200
-        assert cloud_env.detect_server_env() is True
 
 def test_detect_aws_metadata_failure():
     with patch('requests.get') as mock_get:
