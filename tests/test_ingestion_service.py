@@ -371,6 +371,11 @@ def test_download_sdn_files(mock_requests_get, mock_open_file):
     assert xsd_path == "sdn_advanced.xsd"
     mock_open_file.assert_called()
 
+def test_download_sdn_files_failure(mock_requests_get):
+    mock_requests_get.side_effect = requests.exceptions.RequestException("Network error")
+    with pytest.raises(requests.exceptions.RequestException):
+        download_sdn_files("http://example.com/sdn.xml", "http://example.com/sdn.xsd")
+
 def test_validate_sdn_xml(mock_open_file):
     mock_open_file.side_effect = [
         mock_open(read_data=SAMPLE_XSD).return_value,
