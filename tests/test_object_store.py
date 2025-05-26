@@ -13,6 +13,26 @@ def reset_object_store_instance():
     yield
     importlib.reload(importlib.import_module('backend.data_layer.object_store'))
 
+# Test: Detecting environment and AWS import
+@patch('backend.data_layer.object_store.detect_env', return_value='aws')
+@patch('importlib.import_module')
+def test_object_store_detect_env(mock_import_module, mock_detect_env):
+    del os.environ['CLOUD_ENV_OVERRIDE']
+    os.environ['AWS_EXECUTION_ENV'] = 'aws'  # Simulate AWS environment
+    # Mocking the module and class
+    mock_module = MagicMock()
+    mock_class = MagicMock()
+    setattr(mock_module, "ObjectStoreAWS", mock_class)
+    mock_import_module.return_value = mock_module
+
+    # Call the function to test object store instantiation
+    instance = ObjectStore.get_object_store()
+
+    # Assertions to verify behavior
+    mock_import_module.assert_called_with('backend.data_layer.object_store_aws')
+    mock_class.assert_called_once()
+    assert instance is mock_class.return_value
+
 # Test: Environment override and AWS import
 @patch('backend.data_layer.object_store.detect_env', return_value='aws')
 @patch('importlib.import_module')
