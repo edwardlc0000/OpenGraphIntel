@@ -8,6 +8,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
+      # --- Development Environment ---
+      CLOUD_ENV_OVERRIDE: aws
+
       # --- PostgreSQL ---
       POSTGRES_DB: sanctions
       POSTGRES_USER: user
