@@ -21,13 +21,15 @@ _object_store_instance = None
 
 class ObjectStore:
     """
-
+    A factory class to get an instance of the appropriate object store based on the cloud environment.
     """
     @staticmethod
     def get_object_store() -> object:
         """
         This function dynamically imports the appropriate object store module based on the cloud environment.
         It checks for an environment variable override and defaults to using the detected environment.
+        Returns:
+            object: An instance of the object store class for the detected cloud environment.
         """
         global _object_store_instance
         if _object_store_instance is None:

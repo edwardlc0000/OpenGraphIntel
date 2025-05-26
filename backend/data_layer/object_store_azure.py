@@ -1,7 +1,6 @@
 # backend/data_layer/object_store_azure.py
 
 import logging
-import os
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from dotenv import load_dotenv
@@ -49,9 +48,11 @@ class ObjectStoreAzure:
             self._initialize_client()
         return self._blob_service_client
 
-    def ensure_container(self, container_name: str):
+    def ensure_container(self, container_name: str) -> None:
         """
         Ensures the container exists.
+        Args:
+            container_name (str): The name of the container to ensure.
         """
         try:
             self.client.create_container(container_name)
@@ -59,9 +60,13 @@ class ObjectStoreAzure:
         except ResourceExistsError:
             pass
 
-    def upload_file(self, container_name: str, blob_name: str, file_path: str):
+    def upload_file(self, container_name: str, blob_name: str, file_path: str) -> None:
         """
         Uploads a file to the specified container.
+        Args:
+            container_name (str): The name of the container to upload to.
+            blob_name (str): The name of the blob in the container.
+            file_path (str): The local path of the file to upload.
         """
         self.ensure_container(container_name)
         try:
@@ -72,9 +77,13 @@ class ObjectStoreAzure:
             logger.error(f"Failed to upload file: {e}")
             raise
 
-    def download_file(self, container_name: str, blob_name: str, file_path: str):
+    def download_file(self, container_name: str, blob_name: str, file_path: str) -> None:
         """
         Downloads a file from the specified container.
+        Args:
+            container_name (str): The name of the container to download from.
+            blob_name (str): The name of the blob in the container.
+            file_path (str): The local path where the file will be saved.
         """
         try:
             blob_client = self.client.get_blob_client(container=container_name, blob=blob_name)
@@ -89,9 +98,12 @@ class ObjectStoreAzure:
             logger.error(f"Failed to download file: {e}")
             raise
 
-    def list_files(self, container_name: str, prefix: str = ""):
+    def list_files(self, container_name: str, prefix: str = "") -> list[str]:
         """
         Lists blobs in the specified container.
+        Args:
+            container_name (str): The name of the container to list blobs from.
+            prefix (str): Optional prefix to filter the listed blobs.
         """
         try:
             container_client = self.client.get_container_client(container_name)

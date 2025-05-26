@@ -54,9 +54,11 @@ class ObjectStoreGCP:
             self._initialize_client()
         return self._gcs_client
 
-    def ensure_bucket(self, bucket_name: str):
+    def ensure_bucket(self, bucket_name: str) -> None:
         """
         Ensures the bucket exists. If it does not exist, it creates the bucket.
+        Args:
+            bucket_name (str): The name of the bucket to ensure.
         """
         try:
             bucket = self.client.lookup_bucket(bucket_name)
@@ -67,9 +69,13 @@ class ObjectStoreGCP:
             logger.error(f"Failed to ensure bucket: {e}")
             raise
 
-    def upload_file(self, bucket_name: str, object_name: str, file_path: str):
+    def upload_file(self, bucket_name: str, object_name: str, file_path: str) -> None:
         """
         Uploads a file to the specified bucket.
+        Args:
+            bucket_name (str): The name of the bucket to upload to.
+            object_name (str): The name of the object in the bucket.
+            file_path (str): The local path of the file to upload.
         """
         self.ensure_bucket(bucket_name)
         try:
@@ -81,9 +87,13 @@ class ObjectStoreGCP:
             logger.error(f"Failed to upload file: {e}")
             raise
 
-    def download_file(self, bucket_name: str, object_name: str, file_path: str):
+    def download_file(self, bucket_name: str, object_name: str, file_path: str) -> None:
         """
         Downloads a file from the specified bucket.
+        Args:
+            bucket_name (str): The name of the bucket to download from.
+            object_name (str): The name of the object to download.
+            file_path (str): The local path where the file will be saved.
         """
         try:
             bucket = self.client.get_bucket(bucket_name)
@@ -94,9 +104,12 @@ class ObjectStoreGCP:
             logger.error(f"Failed to download file: {e}")
             raise
 
-    def list_files(self, bucket_name: str, prefix: str = ""):
+    def list_files(self, bucket_name: str, prefix: str = "") -> list[str]:
         """
         Lists files in the specified bucket.
+        Args:
+            bucket_name (str): The name of the bucket to list files from.
+            prefix (str): Optional prefix to filter the files.
         """
         try:
             bucket = self.client.get_bucket(bucket_name)
