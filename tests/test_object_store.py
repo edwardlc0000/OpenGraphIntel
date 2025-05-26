@@ -17,7 +17,8 @@ def reset_object_store_instance():
 @patch('backend.data_layer.object_store.detect_env', return_value='aws')
 @patch('importlib.import_module')
 def test_object_store_detect_env(mock_import_module, mock_detect_env):
-    del os.environ['CLOUD_ENV_OVERRIDE']
+    if 'CLOUD_ENV_OVERRIDE' in os.environ:
+        del os.environ['CLOUD_ENV_OVERRIDE']
     os.environ['AWS_EXECUTION_ENV'] = 'aws'  # Simulate AWS environment
     # Mocking the module and class
     mock_module = MagicMock()
