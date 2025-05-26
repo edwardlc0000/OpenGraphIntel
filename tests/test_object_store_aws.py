@@ -46,9 +46,48 @@ def test_minio_client_singleton(mock_env_variables):
         client2 = store2.client
         assert client1 is client2
 
+def test_minio_client_initialization(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_minio.return_value = mock_client
+        # Create a store instance
+        store = ObjectStoreAWS()
+        store._initialize_client()
+        # Ensure the client is initialized
+        assert store.client is not None
+        assert store.client is mock_client
+
+def test_minio_client_initialization_singleton(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_minio.return_value = mock_client
+        store = ObjectStoreAWS()
+        # Initialize the client
+        client_first = store.client
+        # Call client property again to ensure it's not re-initializing
+        client_second = store.client
+        assert client_first is client_second
+        # Ensure Minio was initialized only once
+        assert mock_minio.call_count == 1
+
+def test_minio_client_property(mock_env_variables):
+    with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        mock_client = MagicMock()
+        mock_minio.return_value = mock_client
+        # Create a store instance
+        store = ObjectStoreAWS()
+        # Ensure _minio_client is None initially
+        store._minio_client = None
+        assert store._minio_client is None
+        # Access the client, which should trigger the initialization
+        client = store.client
+        # Check that _initialize_client() was called
+        assert store._minio_client is not None
+        assert client is mock_client  # Ensure the returned client is the mock instance
+        # Ensure Minio initialization occurred
+        mock_minio.assert_called()
 
 def test_ensure_bucket_exists(mock_env_variables):
-    # Specific mock for Minio client
     with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
         mock_client = MagicMock()
         mock_client.bucket_exists.return_value = True
@@ -85,6 +124,7 @@ def test_upload_file_success(mock_env_variables):
 
 def test_upload_file_failure(mock_env_variables):
     with patch('backend.data_layer.object_store_aws.Minio') as mock_minio:
+        # Configure the mock Minio client
         mock_client = MagicMock()
         mock_minio.return_value = mock_client
 
