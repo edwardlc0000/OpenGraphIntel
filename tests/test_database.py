@@ -21,6 +21,12 @@ def sqlite_manager():
     manager._base = manager._construct_base()
     return manager
 
+def test_singleton_instance():
+    """Test that DatabaseManager is a singleton."""
+    manager1 = DatabaseManager()
+    manager2 = DatabaseManager()
+    assert manager1 is manager2
+
 # Test construct_postgres_url
 @patch("backend.data_layer.database.get_env_variable")
 def test_construct_postgres_url(mock_get_env_variable):
@@ -36,14 +42,11 @@ def test_construct_postgres_url(mock_get_env_variable):
     expected_url = "postgresql://test_user:test_password@localhost:5432/test_db"
     assert manager._construct_postgres_url() == expected_url
 
-
 @patch("backend.data_layer.database.get_env_variable")
 def test_construct_postgres_url_missing_env_var(mock_get_env_variable):
     mock_get_env_variable.side_effect = ValueError("Missing environment variable")
     with pytest.raises(ValueError):
         manager = DatabaseManager()
-        manager._construct_postgres_url()
-
 
 # Test construct_engine
 @patch("backend.data_layer.database.create_engine")
@@ -58,7 +61,6 @@ def test_construct_engine(mock_construct_postgres_url, mock_create_engine):
     assert engine == mock_create_engine.return_value
     mock_create_engine.assert_called_once_with("postgresql://test_user:test_password@localhost:5432/test_db")
 
-
 @patch("backend.data_layer.database.create_engine")
 @patch("backend.data_layer.database.DatabaseManager._construct_postgres_url")
 def test_construct_engine_with_existing_engine(mock_construct_postgres_url, mock_create_engine):
@@ -72,6 +74,19 @@ def test_construct_engine_with_existing_engine(mock_construct_postgres_url, mock
     assert engine == mock_create_engine.return_value
     mock_construct_postgres_url.assert_called_once()
 
+@patch("backend.data_layer.database.create_engine")
+@patch("backend.data_layer.database.DatabaseManager._construct_postgres_url")
+def test_construct_engine_singleton(mock_construct_postgres_url, mock_create_engine):
+    """Test that construct_engine returns the same engine instance."""
+    mock_construct_postgres_url.return_value = "postgresql://test_user:test_password@localhost:5432/test_db"
+    mock_create_engine.return_value = MagicMock(spec=Engine)
+
+    manager1 = DatabaseManager()
+    engine1 = manager1._engine
+    manager1._construct_engine("postgresql://test_user:test_password@localhost:5432/test_db")  # Force engine creation
+    engine2 = manager1._engine
+
+    assert engine1 is engine2
 
 @patch("backend.data_layer.database.create_engine")
 def test_construct_engine_creation_failure(mock_create_engine):
@@ -79,8 +94,6 @@ def test_construct_engine_creation_failure(mock_create_engine):
     mock_create_engine.side_effect = Exception("Engine creation failed")
     with pytest.raises(RuntimeError, match="Failed to create database engine."):
         manager = DatabaseManager()
-        manager._engine
-
 
 @patch("backend.data_layer.database.create_engine")
 def test_construct_engine_retry_logic(mock_create_engine):
@@ -89,10 +102,8 @@ def test_construct_engine_retry_logic(mock_create_engine):
     with patch("backend.data_layer.database.logger") as mock_logger:
         with pytest.raises(RuntimeError, match="Failed to create database engine."):
             manager = DatabaseManager()
-            manager._construct_engine("postgresql://user:pass@localhost:5432/db", retries=5)
         assert mock_logger.info.call_count == 5  # Ensure retries are logged
         assert mock_logger.error.call_count >= 5  # Ensure errors are logged
-
 
 # Test construct_session
 @patch("backend.data_layer.database.DatabaseManager._construct_engine")
@@ -105,7 +116,6 @@ def test_construct_session(mock_construct_engine):
     assert isinstance(session_factory, sessionmaker)
     assert session_factory.kw["bind"] == mock_engine
 
-
 @patch("backend.data_layer.database.DatabaseManager._construct_engine")
 def test_construct_session_with_existing_factory(mock_construct_engine):
     mock_engine = MagicMock(spec=Engine)
@@ -116,13 +126,11 @@ def test_construct_session_with_existing_factory(mock_construct_engine):
     session_factory2 = manager._session_factory
     assert session_factory1 == session_factory2
 
-
 # Test construct_base
 def test_construct_base():
     manager = DatabaseManager()
     base = manager._base
     assert base.metadata is not None
-
 
 # Test get_db
 @patch("backend.data_layer.database.DatabaseManager._construct_session")
