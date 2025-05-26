@@ -6,13 +6,13 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 # Import custom modules
-from backend.data_layer.database import construct_base
+from backend.data_layer.database import DatabaseManager
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Initialize the base class for SQLAlchemy models
-Base = construct_base()
+# Initialize the database manager and get the Base
+from backend.models.base import Base
 
 class SDNEntity(Base):
     """

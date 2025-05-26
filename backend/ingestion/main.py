@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 import os
 
 # Import custom modules
-from backend.data_layer.database import get_db, init_db
+from backend.data_layer.database import DatabaseManager
 from backend.ingestion.service import (
     download_sdn_files,
     validate_sdn_xml,
@@ -27,9 +27,12 @@ logger = logging.getLogger(__name__)
 # Initialize the scheduler
 scheduler = BackgroundScheduler()
 
+# Initialize the database manager
+db_manager = DatabaseManager()
+
 @router.post("/load/sdn_data")
 def load_sdn_data(
-    db: Session = Depends(get_db),
+    db: Session = Depends(db_manager.get_db),
     xml_url: str = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML",
     xsd_url: str = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML.xsd"
 ) -> dict[str, str]:
@@ -87,12 +90,12 @@ async def lifespan(app: FastAPI):
     if "PYTEST_CURRENT_TEST" not in os.environ:
         logger.info("Application startup: Triggering SDN data load.")
         # Initialize the database and create tables
-        init_db()
+        db_manager.init_db()
         try:
-            db = next(get_db())
+            db = next(db_manager.get_db())
             load_sdn_data(db=db)
             scheduler.add_job(
-                func=lambda: load_sdn_data(db=next(get_db())),
+                func=lambda: load_sdn_data(db=next(db_manager.get_db())),
                 trigger=CronTrigger(hour=0, minute=0),
                 id="daily_sdn_data_load",
                 replace_existing=True
