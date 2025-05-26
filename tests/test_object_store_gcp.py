@@ -3,6 +3,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from google.cloud import storage
+from google.auth.exceptions import DefaultCredentialsError
 from google.api_core.exceptions import GoogleAPIError
 from backend.data_layer.object_store_gcp import ObjectStoreGCP
 
@@ -42,6 +43,38 @@ def test_gcs_client_singleton(mock_storage_client, mock_env_variables):
     assert client1 is client2
 
 @patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_gcs_client_initialization(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    store = ObjectStoreGCP()
+    assert store.client is not None
+    mock_storage_client.assert_called_with(project='my-project')
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_gcs_client_initialization_singleton(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    store = ObjectStoreGCP()
+    client1 = store.client
+    store._initialize_client()
+    client2 = store.client
+    assert client1 is client2
+    mock_storage_client.assert_called_once_with(project='my-project')
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_gcs_client_initialization_failure(mock_storage_client, mock_env_variables):
+    mock_storage_client.side_effect = DefaultCredentialsError("Credentials error")
+    with pytest.raises(DefaultCredentialsError):
+        ObjectStoreGCP()
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_gcs_client_property(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    store = ObjectStoreGCP()
+    store._gcs_client = None  # Force re-initialization
+    client = store.client
+    assert client is not None
+    mock_storage_client.assert_called_with(project='my-project')
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
 def test_ensure_bucket_exists(mock_storage_client, mock_env_variables):
     setup_gcs_mocks(mock_storage_client)
     mock_client = mock_storage_client.return_value
@@ -60,6 +93,15 @@ def test_ensure_bucket_not_exists(mock_storage_client, mock_env_variables):
     store = ObjectStoreGCP()
     store.ensure_bucket('my-bucket')
     mock_client.create_bucket.assert_called_with('my-bucket')
+
+@patch('backend.data_layer.object_store_gcp.storage.Client')
+def test_ensure_bucket_failure(mock_storage_client, mock_env_variables):
+    setup_gcs_mocks(mock_storage_client)
+    mock_client = mock_storage_client.return_value
+    mock_client.lookup_bucket.side_effect = GoogleAPIError("Bucket error")
+    store = ObjectStoreGCP()
+    with pytest.raises(GoogleAPIError):
+        store.ensure_bucket('my-bucket')
 
 @patch('backend.data_layer.object_store_gcp.storage.Client')
 def test_upload_file_success(mock_storage_client, mock_env_variables):
