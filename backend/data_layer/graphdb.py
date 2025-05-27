@@ -3,6 +3,7 @@
 # Import dependencies
 import logging
 from neo4j import Driver, GraphDatabase
+from neomodel import config as neomodel_config
 
 # Import custom modules
 from backend.common.utils import get_env_variable
@@ -10,84 +11,86 @@ from backend.common.utils import get_env_variable
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Import environment variables
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Cache for the Neo4j driver
-_neo4j_driver = None
-
-# Lazy initialization for the Neo4j configuration
-def get_neo4j_config() -> tuple[str, str, str]:
+class GraphDBManager:
     """
-    Retrieves the Neo4j configuration from environment variables.
-    Returns:
-        tuple: A tuple containing the Neo4j URI, user, and password.
+    A class to manage the Neo4j database connection and operations.
+    This class is designed to be a singleton, ensuring that only one instance of the Neo4j driver is created.
     """
-    try:
-        NEO4J_URI = get_env_variable("NEO4J_URI")
-        NEO4J_USER = get_env_variable("NEO4J_USER")
-        NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD")
-        return NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
-    except ValueError as e:
-        logger.error(f"Error retrieving environment variables: {e}")
-        raise
+    _instance = None
 
-# Lazy initialization for the Neo4j driver
-def get_neo4j_driver() -> Driver:
-    """
-    Retrieves the Neo4j driver, creating it if it doesn't exist.
-    Returns:
-        Driver: The Neo4j driver.
-    """
-    global _neo4j_driver
-    if _neo4j_driver is None:
-        NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD = get_neo4j_config()
+    def __new__(cls):
+        """
+        Singleton pattern to ensure only one instance of GraphDBManager exists.
+        """
+        if cls._instance is None:
+            cls._instance = super(GraphDBManager, cls).__new__(cls)
+            cls._instance._driver = None
+            cls._instance._initialize_driver()
+            cls._instance._configure_neomodel()
+        return cls._instance
+
+    def get_neo4j_config(self) -> tuple[str, str, str]:
+        """
+        Retrieves the Neo4j configuration from environment variables.
+        Returns:
+            tuple: A tuple containing the Neo4j URI, user, and password
+        """
         try:
-            _neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-            logger.info(f"Neo4j driver created successfully: {NEO4J_URI}")
-        except Exception as e:
-            logger.error(f"Failed to create Neo4j driver: {e}")
-            raise RuntimeError("Failed to create Neo4j driver.")
-    return _neo4j_driver
+            NEO4J_URI = get_env_variable("NEO4J_URI")
+            NEO4J_USER = get_env_variable("NEO4J_USER")
+            NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD")
+            return NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+        except ValueError as e:
+            logger.error(f"Error retrieving environment variables: {e}")
+            raise
 
-# Create nodes
-def create_node(tx, label, properties):
-    """
-    Create a node in the Neo4j database.
-    Args:
-        tx: The transaction object.
-        label (str): The label for the node.
-        properties (dict): A dictionary of properties for the node.
-    """
-    try:
-        query = f"CREATE (n:{label} $properties)"
-        tx.run(query, properties=properties)
-        logger.info(f"Node created with label {label} and properties {properties}")
-    except Exception as e:
-        logger.error(f"Error creating node: {e}")
-        raise
-    finally:
-        tx.close()
+    def _initialize_driver(self) -> None:
+        """Initialize the Neo4j driver with the provided credentials."""
+        NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD = self.get_neo4j_config()
+        if self._driver is None:
+            try:
+                self._driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+                logger.info(f"Neo4j driver created successfully: {NEO4J_URI}")
+            except Exception as e:
+                logger.error(f"Failed to create Neo4j driver: {e}")
+                raise RuntimeError("Failed to create Neo4j driver.") from e
 
-# Create relationships
-def create_relationship(tx, start_node, end_node, relationship_type):
-    """
-    Create a relationship between two nodes in the Neo4j database.
-    Args:
-        tx: The transaction object.
-        start_node (str): The starting node's ID.
-        end_node (str): The ending node's ID.
-        relationship_type (str): The type of relationship to create.
-    """
-    try:
-        query = f"MATCH (a), (b) WHERE id(a) = $start_node AND id(b) = $end_node CREATE (a)-[r:{relationship_type}]->(b)"
-        tx.run(query, start_node=start_node, end_node=end_node)
-        logger.info(f"Relationship created from {start_node} to {end_node} with type {relationship_type}")
-    except Exception as e:
-        logger.error(f"Error creating relationship: {e}")
-        raise
-    finally:
-        tx.close()
+    def _configure_neomodel(self) -> None:
+        """Configure neomodel with the Neo4j driver."""
+        if self._driver is None:
+            self._initialize_driver()
+        NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD = self.get_neo4j_config()
+        neomodel_config.DATABASE_URL = f'bolt://{NEO4J_USER}:{NEO4J_PASSWORD}@{NEO4J_URI}'
+        logger.info("neomodel configured successfully.")
+
+    def close_driver(self) -> None:
+        """Close the Neo4j driver connection."""
+        if self._driver is not None:
+            try:
+                self._driver.close()
+                logger.info("Neo4j driver closed successfully.")
+            except Exception as e:
+                logger.error(f"Error closing Neo4j driver: {e}")
+                raise RuntimeError("Failed to close Neo4j driver.") from e
+        else:
+            logger.warning("No Neo4j driver to close.")
+
+    def execute_query(self, query: str, parameters: dict = None) -> list:
+        """
+        Execute a Cypher query against the Neo4j database.
+        Args:
+            query (str): The Cypher query to execute.
+            parameters (dict): Optional parameters for the query.
+        Returns:
+            list: The results of the query.
+        """
+        if self._driver is None:
+            self._initialize_driver()
+
+        with self._driver.session() as session:
+            try:
+                result = session.run(query, parameters or {})
+                return [record for record in result]
+            except Exception as e:
+                logger.error(f"Query failed: {query} with parameters {parameters}. Error: {e}")
+                raise

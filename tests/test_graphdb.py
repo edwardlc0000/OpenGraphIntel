@@ -1,136 +1,233 @@
 # tests/test_graphdb.py
 
 import pytest
+import logging
 from unittest.mock import patch, MagicMock
-import backend.data_layer.graphdb as graphdb
+from backend.data_layer.graphdb import GraphDBManager
+from neomodel import config as neomodel_config
 
-
+# Fixture to reset the singleton instance before each test
 @pytest.fixture(autouse=True)
-def reset_globals():
-    """Fixture to reset global variables before each test."""
-    graphdb._neo4j_driver = None
+def reset_singleton():
+    GraphDBManager._instance = None
 
-# Test get_neo4j_config
-@patch("backend.data_layer.graphdb.get_env_variable")
-def test_get_neo4j_config(mock_get_env_variable):
-    mock_get_env_variable.side_effect = lambda key: {
+@patch('backend.data_layer.graphdb.get_env_variable')
+def test_singleton_instance(mock_get_env_variable):
+    # Mock environment variable retrieval
+    mock_get_env_variable.side_effect = lambda x: {
         "NEO4J_URI": "bolt://localhost:7687",
-        "NEO4J_USER": "neo4j",
-        "NEO4J_PASSWORD": "password",
-    }[key]
+        "NEO4J_USER": "user",
+        "NEO4J_PASSWORD": "password"
+    }[x]
 
-    config = graphdb.get_neo4j_config()
-    assert config == ("bolt://localhost:7687", "neo4j", "password")
-    mock_get_env_variable.assert_any_call("NEO4J_URI")
-    mock_get_env_variable.assert_any_call("NEO4J_USER")
-    mock_get_env_variable.assert_any_call("NEO4J_PASSWORD")
+    # Create two instances of GraphDBManager
+    manager1 = GraphDBManager()
+    manager2 = GraphDBManager()
+
+    # Assert that both instances are the same
+    assert manager1 is manager2
+
+# Mock environment variables
+@patch('backend.data_layer.graphdb.get_env_variable')
+def test_initialize_driver_success(mock_get_env_variable):
+    # Setup mock return values
+    mock_get_env_variable.side_effect = lambda x: {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USER": "user",
+        "NEO4J_PASSWORD": "password"
+    }[x]
+
+    # Mock the GraphDatabase.driver method
+    with patch('backend.data_layer.graphdb.GraphDatabase.driver') as mock_driver:
+        mock_driver.return_value = MagicMock()
+
+        # Create GraphDBManager instance
+        manager = GraphDBManager()
+
+        # Test if the driver was initialized correctly
+        assert manager._driver is not None
+        mock_driver.assert_called_once_with(
+            "bolt://localhost:7687", auth=("user", "password")
+        )
+
+@patch('backend.data_layer.graphdb.get_env_variable')
+def test_initialize_driver_singleton(mock_get_env_variable):
+    # Setup mock return values
+    mock_get_env_variable.side_effect = lambda x: {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USER": "user",
+        "NEO4J_PASSWORD": "password"
+    }[x]
+
+    # Mock the GraphDatabase.driver method
+    with patch('backend.data_layer.graphdb.GraphDatabase.driver') as mock_driver:
+        mock_driver.return_value = MagicMock()
+
+        # Create first instance of GraphDBManager
+        manager1 = GraphDBManager()
+        assert manager1._driver is not None
+        driver1 = manager1._driver
+
+        # Create second instance of GraphDBManager
+        manager1._initialize_driver()  # This should not create a new driver
+        driver2 = manager1._driver
+
+        # Assert that both instances share the same driver
+        assert driver1 is driver2
+        mock_driver.assert_called_with(
+            "bolt://localhost:7687", auth=("user", "password")
+        )
+
+@patch('backend.data_layer.graphdb.get_env_variable')
+def test_get_neo4j_config_failure(mock_get_env_variable):
+    # Setup mock to raise ValueError for missing environment variable
+    mock_get_env_variable.side_effect = ValueError("Missing environment variable")
+
+    # Attempt to create GraphDBManager and expect ValueError
+    with pytest.raises(ValueError, match="Missing environment variable"):
+        GraphDBManager()
+
+@patch('backend.data_layer.graphdb.get_env_variable')
+def test_initialize_driver_failure(mock_get_env_variable):
+    # Setup mock return values
+    mock_get_env_variable.side_effect = lambda x: {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USER": "user",
+        "NEO4J_PASSWORD": "password"
+    }[x]
+
+    # Force GraphDatabase.driver to raise an exception
+    with patch('backend.data_layer.graphdb.GraphDatabase.driver', side_effect=RuntimeError("Driver error")):
+        with pytest.raises(RuntimeError, match="Failed to create Neo4j driver."):
+            GraphDBManager()
+
+@patch('backend.data_layer.graphdb.GraphDBManager._initialize_driver')
+def test_configure_neomodel(mock_initialize_driver):
+    mock_initialize_driver.return_value = None
+
+    # Mock environment variable retrieval
+    with patch('backend.data_layer.graphdb.get_env_variable') as mock_get_env_variable:
+        mock_get_env_variable.side_effect = lambda x: {
+            "NEO4J_URI": "localhost:7687",
+            "NEO4J_USER": "user",
+            "NEO4J_PASSWORD": "password"
+        }[x]
+
+        # Ensure neomodel configuration is applied correctly
+        manager = GraphDBManager()
+        expected_url = "bolt://user:password@localhost:7687"
+        assert neomodel_config.DATABASE_URL == expected_url
+
+@patch('backend.data_layer.graphdb.GraphDBManager._initialize_driver')
+def test_close_driver(mock_initialize_driver):
+    # Mock driver and its methods
+    mock_driver = MagicMock()
+    mock_initialize_driver.return_value = None
+
+    with patch('backend.data_layer.graphdb.GraphDatabase.driver', return_value=mock_driver):
+        manager = GraphDBManager()
+        manager._driver = mock_driver
+
+        # Close driver and verify
+        manager.close_driver()
+        mock_driver.close.assert_called_once()
 
 
-@patch("backend.data_layer.graphdb.get_env_variable")
-def test_get_neo4j_config_missing_env_variable(mock_get_env_variable):
-    with patch("backend.data_layer.graphdb.get_env_variable") as mock_get_env_variable:
-        mock_get_env_variable.side_effect = ValueError("Missing environment variable")
-        with pytest.raises(ValueError):
-            graphdb.get_neo4j_config()
+@patch('backend.data_layer.graphdb.GraphDBManager._initialize_driver')
+def test_close_driver_no_driver(mock_initialize_driver, caplog):
+    mock_initialize_driver.return_value = None
 
-# Test get_neo4j_driver
-@patch("backend.data_layer.graphdb.GraphDatabase.driver")
-@patch("backend.data_layer.graphdb.get_neo4j_config")
-def test_get_neo4j_driver(mock_get_neo4j_config, mock_driver):
-    mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
-    mock_driver.return_value = MagicMock()
+    manager = GraphDBManager()
+    manager._driver = None
 
-    driver = graphdb.get_neo4j_driver()
-    assert driver is not None
-    mock_get_neo4j_config.assert_called_once()
-    mock_driver.assert_called_once_with(
-        "bolt://localhost:7687", auth=("neo4j", "password")
-    )
+    with caplog.at_level(logging.WARNING):  # Specify log level to capture
+        manager.close_driver()
 
-@patch("backend.data_layer.graphdb.GraphDatabase.driver")
-@patch("backend.data_layer.graphdb.get_neo4j_config")
-def test_get_neo4j_driver_with_existing_driver(mock_get_neo4j_config, mock_driver):
-    mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
-    mock_driver.return_value = MagicMock()
+    # Assert that the expected warning message was logged
+    assert any("No Neo4j driver to close" in record.message for record in caplog.records)
 
-    driver = graphdb.get_neo4j_driver()
-    driver = graphdb.get_neo4j_driver()
-    assert driver is not None
-    mock_get_neo4j_config.assert_called_once()
-    mock_driver.assert_called_once_with(
-        "bolt://localhost:7687", auth=("neo4j", "password")
-    )
+@patch('backend.data_layer.graphdb.GraphDatabase.driver')
+def test_close_driver_failure(mock_driver):
+    # Mock the driver to raise an exception on close
+    mock_driver_instance = MagicMock()
+    mock_driver_instance.close.side_effect = RuntimeError("Failed to close Neo4j driver.")
+    mock_driver.return_value = mock_driver_instance
+    manager = GraphDBManager()
+    manager._driver = mock_driver_instance
+    # Attempt to close the driver and expect an exception
+    with pytest.raises(RuntimeError, match="Failed to close Neo4j driver."):
+        manager.close_driver()
 
-@patch("backend.data_layer.graphdb.GraphDatabase.driver")
-@patch("backend.data_layer.graphdb.get_neo4j_config")
-@patch("backend.data_layer.graphdb.logger")
-def test_get_neo4j_driver_failure(mock_logger, mock_get_neo4j_config, mock_driver):
-    mock_get_neo4j_config.return_value = ("bolt://localhost:7687", "neo4j", "password")
-    mock_driver.side_effect = Exception("Connection failed")
+@patch('backend.data_layer.graphdb.GraphDBManager._initialize_driver')
+def test_execute_query_success(mock_initialize_driver):
+    # Mock a successful query run
+    mock_driver = MagicMock()
+    mock_session = MagicMock()
+    mock_result = MagicMock()
 
-    with pytest.raises(RuntimeError, match="Failed to create Neo4j driver."):
-        graphdb.get_neo4j_driver()
-    mock_logger.error.assert_called_once()
-    assert "Failed to create Neo4j driver" in mock_logger.error.call_args[0][0]
+    mock_session.run.return_value = [mock_result]
+    mock_driver.session.return_value.__enter__.return_value = mock_session
+    mock_initialize_driver.return_value = None
 
-# Test create_node
-@patch("backend.data_layer.graphdb.logger")
-def test_create_node(mock_logger):
-    mock_tx = MagicMock()
-    label = "Person"
-    properties = {"name": "John Doe", "age": 30}
+    with patch('backend.data_layer.graphdb.GraphDatabase.driver', return_value=mock_driver):
+        manager = GraphDBManager()
+        manager._driver = mock_driver
 
-    graphdb.create_node(mock_tx, label, properties)
+        # Execute the query and verify results
+        query = "MATCH (n) RETURN n"
+        results = manager.execute_query(query)
+        assert results == [mock_result]
+        mock_session.run.assert_called_once_with(query, {})
 
-    mock_tx.run.assert_called_once_with(
-        "CREATE (n:Person $properties)", properties=properties
-    )
-    mock_logger.info.assert_called_once_with(
-        f"Node created with label {label} and properties {properties}"
-    )
+@patch('backend.data_layer.graphdb.GraphDBManager._initialize_driver')
+@patch('backend.data_layer.graphdb.GraphDatabase.driver')
+def test_execute_query_no_driver(mock_driver_class, mock_initialize_driver):
+    # Mock the Neo4j driver behavior
+    mock_driver = MagicMock()
+    mock_session = MagicMock()
+    mock_result = MagicMock()
 
-@patch("backend.data_layer.graphdb.logger")
-def test_create_node_failure(mock_logger):
-    mock_tx = MagicMock()
-    mock_tx.run.side_effect = Exception("Query failed")
-    label = "Person"
-    properties = {"name": "John Doe", "age": 30}
+    # Define the query execution result
+    mock_session.run.return_value = [mock_result]
+    mock_driver.session.return_value.__enter__.return_value = mock_session
+    mock_driver_class.return_value = mock_driver  # Ensure the mock driver is used as needed
 
-    with pytest.raises(Exception, match="Query failed"):
-        graphdb.create_node(mock_tx, label, properties)
-    mock_logger.error.assert_called_once()
-    assert "Error creating node" in mock_logger.error.call_args[0][0]
-    mock_tx.close.assert_called_once()
+    # Make manager accessible outside initialization
+    manager = GraphDBManager()
+    manager._driver = None  # Simulate that the driver is not initialized
 
-# Test create_relationship
-@patch("backend.data_layer.graphdb.logger")
-def test_create_relationship(mock_logger):
-    mock_tx = MagicMock()
-    start_node = 1
-    end_node = 2
-    relationship_type = "FRIENDS"
+    # Now adjust _initialize_driver to simulate setting the driver
+    def initialize_driver_side_effect():
+        # Assign mock_driver to the GraphDBManager's _driver attribute
+        GraphDBManager._instance._driver = mock_driver
 
-    graphdb.create_relationship(mock_tx, start_node, end_node, relationship_type)
+    # Set the side effect
+    mock_initialize_driver.side_effect = initialize_driver_side_effect
 
-    mock_tx.run.assert_called_once_with(
-        "MATCH (a), (b) WHERE id(a) = $start_node AND id(b) = $end_node CREATE (a)-[r:FRIENDS]->(b)",
-        start_node=start_node,
-        end_node=end_node,
-    )
-    mock_logger.info.assert_called_once_with(
-        f"Relationship created from {start_node} to {end_node} with type {relationship_type}"
-    )
+    # Execute the query
+    query = "MATCH (n) RETURN n"
+    results = manager.execute_query(query)
 
-@patch("backend.data_layer.graphdb.logger")
-def test_create_relationship_failure(mock_logger):
-    mock_tx = MagicMock()
-    mock_tx.run.side_effect = Exception("Relationship query failed")
-    start_node = 1
-    end_node = 2
-    relationship_type = "FRIENDS"
+    # Assertions
+    mock_initialize_driver.assert_called()  # Ensure _initialize_driver was called
+    mock_session.run.assert_called_once_with(query, {})  # Verify the query run call
+    assert results == [mock_result]  # Ensure the return value is as expected
 
-    with pytest.raises(Exception, match="Relationship query failed"):
-        graphdb.create_relationship(mock_tx, start_node, end_node, relationship_type)
-    mock_logger.error.assert_called_once()
-    assert "Error creating relationship" in mock_logger.error.call_args[0][0]
-    mock_tx.close.assert_called_once()
+@patch('backend.data_layer.graphdb.GraphDBManager._initialize_driver')
+def test_execute_query_failure(mock_initialize_driver):
+    # Mock a query failure
+    mock_driver = MagicMock()
+    mock_session = MagicMock()
+
+    mock_session.run.side_effect = RuntimeError("Query failed")
+    mock_driver.session.return_value.__enter__.return_value = mock_session
+    mock_initialize_driver.return_value = None
+
+    with patch('backend.data_layer.graphdb.GraphDatabase.driver', return_value=mock_driver):
+        manager = GraphDBManager()
+        manager._driver = mock_driver
+
+        # Execute the query and expect failure
+        query = "MATCH (n) RETURN n"
+        with pytest.raises(RuntimeError):
+            manager.execute_query(query)
