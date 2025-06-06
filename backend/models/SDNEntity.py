@@ -1,12 +1,9 @@
-# backend/ingestion/SDNEntity.py
+# backend/models/SDNEntity.py
 
 # Import dependencies
 import logging
 from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-
-# Import custom modules
-from backend.data_layer.database import DatabaseManager
 
 # Configure logging
 logger = logging.getLogger(__name__)
