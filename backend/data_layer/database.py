@@ -65,7 +65,7 @@ class DatabaseManager:
             for i in range(retries):
                 try:
                     self._engine = create_engine(database_url)
-                    logger.info(f"Database engine created successfully: {database_url.split('@')[0]}")
+                    logger.info(f"Database engine created successfully.")
                     return self._engine
                 except Exception as e:
                     logger.error(f"Error creating database engine: {e}")
