@@ -174,15 +174,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       MILVUS_HOST: milvus
       MILVUS_GRPC_PORT: ${MILVUS_GRPC_PORT}
-      NEO4J_HOST: neo4j
-      NEO4J_HTTP_PORT: ${NEO4J_HTTP_PORT}
-      NEO4J_BOLT_PORT: ${NEO4J_BOLT_PORT}
-      NEO4J_USER: ${NEO4J_USER}
-      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
     depends_on:
       - postgres
       - milvus
-      - neo4j
 
 volumes:
   pgdata:
