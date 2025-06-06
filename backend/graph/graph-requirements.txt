@@ -8,10 +8,10 @@ apscheduler
 SQLAlchemy
 psycopg2-binary
 
-# Vector store and embeddings
-pymilvus
+# Graph database
+neo4j
+neomodel
 
 # Utilities
 python-dotenv
 requests
-lxml
