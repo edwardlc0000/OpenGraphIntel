@@ -61,8 +61,7 @@ def test_detect_server_provider_unsupported():
     with patch('backend.common.cloud_env.detect_aws_metadata', return_value=False), \
          patch('backend.common.cloud_env.detect_azure_metadata', return_value=False), \
          patch('backend.common.cloud_env.detect_gcp_metadata', return_value=False):
-        with pytest.raises(RuntimeError, match="Unsupported cloud provider detected."):
-            cloud_env.detect_server_provider()
+        assert cloud_env.detect_server_provider() is None
 
 def test_detect_k8s_env():
     with patch('os.path.exists', return_value=True):
@@ -146,84 +145,82 @@ def test_detect_k8s_provider_unsupported(mocker):
     mock_node.metadata.labels = {"unsupported.label": "value"}
     mock_core_v1_api.return_value.read_node.return_value = mock_node
 
-    with pytest.raises(RuntimeError, match="Unsupported Kubernetes provider detected."):
-        cloud_env.detect_k8s_provider()
+    assert cloud_env.detect_k8s_provider() is None
 
 def test_detect_severless_env_aws(monkeypatch):
     monkeypatch.setenv("AWS_EXECUTION_ENV", "test_function")
-    assert "aws" in cloud_env.detect_serverless_env()
+    assert "aws" in cloud_env.detect_serverless_provider()
 
 def test_detect_severless_env_azure(monkeypatch):
     monkeypatch.setenv("AZURE_FUNCTIONS_ENVIRONMENT", "test_environment")
-    assert "azure" in cloud_env.detect_serverless_env()
+    assert "azure" in cloud_env.detect_serverless_provider()
 
 def test_detect_severless_env_gcp(monkeypatch):
     monkeypatch.setenv("FUNCTION_NAME", "test_function")
-    assert "gcp" in cloud_env.detect_serverless_env()
+    assert "gcp" in cloud_env.detect_serverless_provider()
 
 def test_detect_severless_env_unsupported():
-    with pytest.raises(RuntimeError, match="Unsupported cloud provider detected."):
-        cloud_env.detect_serverless_env()
+    assert cloud_env.detect_serverless_provider() is None
 
 @patch('backend.common.cloud_env.detect_server_provider')
 @patch('backend.common.cloud_env.detect_server_env')
 def test_detect_env_aws_server(mock_detect_server_env, mock_detect_server_provider):
     mock_detect_server_env.return_value = True
     mock_detect_server_provider.return_value = "aws"
-    assert cloud_env.detect_env() == "aws"
+    assert cloud_env.detect_cloud_env() == "aws"
 
 @patch('backend.common.cloud_env.detect_k8s_provider')
 @patch('backend.common.cloud_env.detect_k8s_env')
 def test_detect_env_aws_k8s(mock_detect_k8s_env, mock_detect_k8s_provider):
     mock_detect_k8s_env.return_value = True
     mock_detect_k8s_provider.return_value = "aws-eks"
-    assert cloud_env.detect_env() == "aws-eks"
+    assert cloud_env.detect_cloud_env() == "aws-eks"
 
-@patch('backend.common.cloud_env.detect_serverless_env')
-def test_detect_env_aws_lambda(mock_detect_serverless_env):
-    mock_detect_serverless_env.return_value = "aws-lambda"
-    assert cloud_env.detect_env() == "aws-lambda"
+@patch('backend.common.cloud_env.detect_serverless_provider')
+def test_detect_env_aws_lambda(mock_detect_serverless_provider):
+    mock_detect_serverless_provider.return_value = "aws-lambda"
+    assert cloud_env.detect_cloud_env() == "aws-lambda"
 
 @patch('backend.common.cloud_env.detect_server_provider')
 @patch('backend.common.cloud_env.detect_server_env')
 def test_detect_env_azure(mock_detect_server_env, mock_detect_server_provider):
     mock_detect_server_env.return_value = True
     mock_detect_server_provider.return_value = "azure"
-    assert cloud_env.detect_env() == "azure"
+    assert cloud_env.detect_cloud_env() == "azure"
 
 @patch('backend.common.cloud_env.detect_k8s_provider')
 @patch('backend.common.cloud_env.detect_k8s_env')
 def test_detect_env_azure_k8s(mock_detect_k8s_env, mock_detect_k8s_provider):
     mock_detect_k8s_env.return_value = True
     mock_detect_k8s_provider.return_value = "azure-aks"
-    assert cloud_env.detect_env() == "azure-aks"
+    assert cloud_env.detect_cloud_env() == "azure-aks"
 
-@patch('backend.common.cloud_env.detect_serverless_env')
-def test_detect_env_azure_functions(mock_detect_serverless_env):
-    mock_detect_serverless_env.return_value = "azure-functions"
-    assert cloud_env.detect_env() == "azure-functions"
+@patch('backend.common.cloud_env.detect_serverless_provider')
+def test_detect_env_azure_functions(mock_detect_serverless_provider):
+    mock_detect_serverless_provider.return_value = "azure-functions"
+    assert cloud_env.detect_cloud_env() == "azure-functions"
 
 @patch('backend.common.cloud_env.detect_server_provider')
 @patch('backend.common.cloud_env.detect_server_env')
 def test_detect_env_gcp(mock_detect_server_env, mock_detect_server_provider):
     mock_detect_server_env.return_value = True
     mock_detect_server_provider.return_value = "gcp"
-    assert cloud_env.detect_env() == "gcp"
+    assert cloud_env.detect_cloud_env() == "gcp"
 
 @patch('backend.common.cloud_env.detect_k8s_provider')
 @patch('backend.common.cloud_env.detect_k8s_env')
 def test_detect_env_gcp_k8s(mock_detect_k8s_env, mock_detect_k8s_provider):
     mock_detect_k8s_env.return_value = True
     mock_detect_k8s_provider.return_value = "gcp-gke"
-    assert cloud_env.detect_env() == "gcp-gke"
+    assert cloud_env.detect_cloud_env() == "gcp-gke"
 
-@patch('backend.common.cloud_env.detect_serverless_env')
-def test_detect_env_gcp_functions(mock_detect_serverless_env):
-    mock_detect_serverless_env.return_value = "gcp-cloud-functions"
-    assert cloud_env.detect_env() == "gcp-cloud-functions"
+@patch('backend.common.cloud_env.detect_serverless_provider')
+def test_detect_env_gcp_functions(mock_detect_serverless_provider):
+    mock_detect_serverless_provider.return_value = "gcp-cloud-functions"
+    assert cloud_env.detect_cloud_env() == "gcp-cloud-functions"
 
 def test_detect_env_unsupported():
     with patch('backend.common.cloud_env.detect_k8s_env', return_value=False), \
          patch('backend.common.cloud_env.detect_server_env', return_value=False):
-        with pytest.raises(RuntimeError, match="Unsupported cloud provider detected."):
-            cloud_env.detect_env()
+        with pytest.raises(RuntimeError, match="Unsupported environment. Please check your cloud provider or serverless configuration."):
+            cloud_env.detect_cloud_env()

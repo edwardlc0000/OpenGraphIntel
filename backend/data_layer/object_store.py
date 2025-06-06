@@ -5,7 +5,7 @@ import logging
 import importlib
 
 # Import custom modules
-from backend.common.cloud_env import detect_env
+from backend.common.cloud_env import detect_cloud_env
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class ObjectStore:
             if os.getenv("CLOUD_ENV_OVERRIDE") is not None or os.getenv("CLOUD_ENV_OVERRIDE", "") != "":
                 cloud_env = os.getenv("CLOUD_ENV_OVERRIDE")
             else:
-                cloud_env = detect_env().lower()
+                cloud_env = detect_cloud_env().lower()
             logger.info(f"Detected cloud environment: {cloud_env}")
 
             if "aws" in cloud_env:

@@ -21,7 +21,7 @@ def detect_server_env() -> bool:
     except requests.RequestException:
         return False
 
-def detect_server_provider() -> str:
+def detect_server_provider() -> str | None:
     """
     Detects the cloud provider based on environment variables and metadata.
     Returns:
@@ -29,13 +29,12 @@ def detect_server_provider() -> str:
     """
     if detect_aws_metadata():
         return "aws"
-    elif detect_gcp_metadata():
-        return "gcp"
     elif detect_azure_metadata():
         return "azure"
+    elif detect_gcp_metadata():
+        return "gcp"
     else:
-        logging.error("Unsupported cloud provider detected.")
-        raise RuntimeError("Unsupported cloud provider detected.")
+        return None
 
 def detect_aws_metadata() -> bool:
     """
@@ -73,7 +72,7 @@ def detect_k8s_env() -> bool:
     """
     return os.path.exists("/var/run/secrets/kubernetes.io/serviceaccount") or os.path.exists("/var/run/secrets/kubernetes.io/namespace")
 
-def detect_k8s_provider() -> str:
+def detect_k8s_provider() -> str | None:
     """
     Detects the Kubernetes provider based on the environment.
     Returns:
@@ -98,14 +97,12 @@ def detect_k8s_provider() -> str:
         elif "cloud.google.com/gke-nodepool" in labels:
             return "gcp-gke"
         else:
-            logging.error("Unsupported Kubernetes provider detected.")
-            raise RuntimeError("Unsupported Kubernetes provider detected.")
+            return None
 
     except Exception as e:
-        logging.error(f"Error detecting Kubernetes provider: {e}")
-        raise RuntimeError("Unsupported Kubernetes provider detected.")
+        return None
 
-def detect_serverless_env() -> str:
+def detect_serverless_provider() -> str | None:
     """
     Detects the serverless environment based on environment variables.
     Returns:
@@ -117,19 +114,22 @@ def detect_serverless_env() -> str:
         return "azure-functions"
     elif "FUNCTION_NAME" in os.environ:
         return "gcp-cloud-functions"
+    else:
+        return None
 
-    logging.error("Unsupported cloud provider detected.")
-    raise RuntimeError("Unsupported cloud provider detected.")
-
-def detect_env() -> str:
+def detect_cloud_env() -> str:
     """
     Detects the environment in which the code is running.
     Returns:
         str: The detected environment.
     """
-    if detect_k8s_env():
-        return detect_k8s_provider()
-    elif detect_server_env():
-        return detect_server_provider()
-    else:
-        return detect_serverless_env()
+    return_value: str | None = detect_k8s_provider()
+    if return_value is not None:
+        return return_value
+    return_value: str | None = detect_server_provider()
+    if return_value is not None:
+        return return_value
+    return_value: str | None = detect_serverless_provider()
+    if return_value is not None:
+        return return_value
+    raise RuntimeError("Unsupported environment. Please check your cloud provider or serverless configuration.")
