@@ -3,6 +3,7 @@ fastapi
 uvicorn
 httpx
 apscheduler
+tenacity
 
 # ORM and PostgreSQL
 SQLAlchemy

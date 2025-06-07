@@ -3,6 +3,8 @@ fastapi
 uvicorn
 httpx
 apscheduler
+requests
+tenacity
 
 # ORM and PostgreSQL
 sqlalchemy
@@ -48,5 +50,4 @@ pytest-mock
 python-dotenv
 tqdm
 lxml
-requests
 kubernetes
